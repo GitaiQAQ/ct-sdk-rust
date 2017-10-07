@@ -30,18 +30,46 @@ pub use prettytable::row::Row;
 pub use prettytable::cell::Cell;
 pub use prettytable::format::FormatBuilder;
 
-pub trait CTCLIBukket<P> {
+pub trait CTCLIBucket {
     fn list(&self);
+    fn create(&self, name: String);
+    fn delete(&self, name: String);
 }
 
-impl<P> CTCLIBukket<P> for S3Client<P, Client>
+impl<P> CTCLIBucket for S3Client<P, Client>
     where P: AwsCredentialsProvider,
 {
     fn list(&self) {
-        debug!("List Objects");
+        debug!("List Bucket");
         match self.list_buckets() {
-            Ok(h) => printstd!(h.buckets, name, creation_date),
-            Err(e) => debug!("{:#?}", e),
+            Ok(out) => printstd!(out.buckets, name, creation_date),
+            Err(err) => print_aws_err!(err),
+        }
+    }
+
+    /// 创建一个 Bucket
+    fn create(&self, name: String) {
+        debug!("Create Bucket");
+        match self.create_bucket(&CreateBucketRequest {
+            bucket: name.clone(),
+            ..Default::default()
+        }) {
+            Ok(out) => println!("Create {} SUCCESS in {}", name, out.location),
+            Err(err) => print_aws_err!(err),
+        }
+    }
+
+    // TODO: 更改创建的 Bucket属性（私有、公有、只读）
+
+    /// 删除已创建的 Bucket
+    fn delete(&self, name: String) {
+        debug!("Delete Bucket");
+        match self.delete_bucket(&DeleteBucketRequest {
+            bucket: name.clone(),
+            ..Default::default()
+        }) {
+            Ok(_) => println!("Remove {} SUCCESS", name),
+            Err(err) => print_aws_err!(err),
         }
     }
 }
