@@ -1,0 +1,48 @@
+[package]
+name = "ct-sdk"
+version = "0.1.0"
+authors = ["Hans Chris Jones", "Gitai <i@gitai.me>"]
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["aws", "s3", "ctyun", "oos"]
+repository = "https://github.com/lambdastackio/aws-sdk-rust"
+homepage = "https://github.com/lambdastackio/aws-sdk-rust"
+documentation = "https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws"
+description = """
+Important Enhancements:
+1) Supports V2 and V4 API Signatures for third party S3 compliant products like Ceph
+2) Works from behind proxies
+3) Returned data can be in Rust structs, JSON or XML
+
+Works only for S3. Other AWS Storage features are coming soon!
+"""
+
+[dependencies]
+aws-sdk-rust = "0.1.42"
+lsio = "0"
+md5 = "0.3"
+chrono = "0.2"
+httparse = "1"
+hyper = "0.10"
+hyper-openssl = "0.2"
+log = "0.3.6"
+openssl = "0.9"
+regex = "0.1"
+rustc-serialize = "0.3"
+# Credentials use serde
+serde = "0.8"
+serde_json = "0.8"
+time = "0.1"
+url = "1.2"
+xml-rs = "0"
+
+env_logger = "0.4.3"
+prettytable-rs = "^0.6"
+clap = "2.26.2"
+
+[dev-dependencies]
+# NOTE: term is only used for the example
+term = "0.4"
+
+# Run the example like. It will pull in term and md5 at that time since they are only used for the example:
+# cargo run --example s3
