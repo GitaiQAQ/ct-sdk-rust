@@ -19,8 +19,22 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// NOTE: See the src/main.rs for more examples...
+//! Command Line Interface for CTYun OOS Services
+//!
+//! # Getting Started
+//! ## Credentials configure
+//!
+//! ```shell
+//! ct conf
+//! ```
+//! Other ways:
+//! * Environment variables
+//! * Shared credentials file
+//! * Config file
+//! * IAM Role
+//! ## Object Operations
 
+// NOTE: See the src/main.rs for more examples...
 #[macro_use]
 extern crate clap;
 extern crate aws_sdk_rust;

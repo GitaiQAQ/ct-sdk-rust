@@ -19,6 +19,7 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+//! Additional API for Object Operations
 use hyper::client::Client;
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
@@ -40,7 +41,15 @@ pub struct PresignedObjectRequest {
     pub key: ObjectKey,
 }
 
+/// A trait to additional pre-signed for S3Client.
 pub trait CTClientObject<P> {
+    /// Generate a pre-signed url for an S3 object, the returned url can be shared.
+    /// ```
+    /// match s3.presigned_object() {
+    ///     Ok(out) => println!("{:#?}", out),
+    ///     Err(err) => println!("{:#?}", err),
+    /// }
+    /// ```
     fn presigned_object(&self, input: &PresignedObjectRequest)
         -> Result<String, S3Error>;
 }

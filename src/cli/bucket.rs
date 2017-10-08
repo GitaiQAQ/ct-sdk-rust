@@ -31,8 +31,18 @@ pub use prettytable::cell::Cell;
 pub use prettytable::format::FormatBuilder;
 
 pub trait CTCLIBucket {
+    /// List buckets(ls)
     fn list(&self);
+
+    /// 创建一个 Bucket
+    /// Creates an bucket(mb)
     fn create(&self, name: String);
+
+    /// 删除已创建的 Bucket
+    /// Deletes an empty bucket.(rb)
+    /// A bucket must be completely empty of objects and versioned objects before it can be deleted.
+    /// However, the --force parameter can be used to delete the non-versioned objects in the bucket
+    /// before the bucket is deleted.
     fn delete(&self, name: String);
 }
 
@@ -47,7 +57,6 @@ impl<P> CTCLIBucket for S3Client<P, Client>
         }
     }
 
-    /// 创建一个 Bucket
     fn create(&self, name: String) {
         debug!("Create Bucket");
         match self.create_bucket(&CreateBucketRequest {
@@ -61,7 +70,6 @@ impl<P> CTCLIBucket for S3Client<P, Client>
 
     // TODO: 更改创建的 Bucket属性（私有、公有、只读）
 
-    /// 删除已创建的 Bucket
     fn delete(&self, name: String) {
         debug!("Delete Bucket");
         match self.delete_bucket(&DeleteBucketRequest {

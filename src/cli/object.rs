@@ -31,20 +31,33 @@ use rustc_serialize::base64::{STANDARD, ToBase64};
 use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::s3client::S3Client;
 use aws_sdk_rust::aws::s3::object::*;
-use ct_sdk::ct::object::{CTClientObject, PresignedObjectRequest};
+use ct_sdk::sdk::object::{CTClientObject, PresignedObjectRequest};
 
 pub use prettytable::Table;
 pub use prettytable::row::Row;
 pub use prettytable::cell::Cell;
 pub use prettytable::format::FormatBuilder;
 
+//! High-level OOS object operations commands
+//! Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+
+/// Additional object operations commands for S3Client.
 pub trait CTCLIObject {
     fn list(&self, quiet:bool, bucket: String, prefix: Option<String>);
     fn new(&self, bucket: String, key: String, body: String);
+
+    /// 下载已上传的 Object到本地（Download）
     fn get(&self, bucket: String, key: String, path: &Path);
     fn put(&self, bucket: String, key: String, path: &Path);
+
+    /// 删除已上传的 Object（Delete）
+    /// Deletes an object
     fn delete(&self, bucket: String, key: String);
+
+    /// 分享已上传的 Object（Share）
+    /// presign
     fn share(&self, bucket: String, key: String, expires: Option<String>);
+
 }
 
 impl<P> CTCLIObject for S3Client<P, Client>
@@ -84,7 +97,6 @@ impl<P> CTCLIObject for S3Client<P, Client>
         }
     }
 
-    /// 下载已上传的 Object到本地（Download）
     fn get(&self, bucket: String, key: String, path: &Path) {
         debug!("Downland Object");
         match self.get_object(&GetObjectRequest {
@@ -102,9 +114,13 @@ impl<P> CTCLIObject for S3Client<P, Client>
                     },
                 };
 
-                file.write_all(out.get_body());
-                debug!("{:#?}", out);
-                println!("Download {} from {}", key, bucket);
+                match file.write_all(out.get_body()) {
+                    Ok(out) => {
+                        debug!("{:#?}", out);
+                        println!("Download {} from {}", key, bucket);
+                    }
+                    Err(err) => println!("{}", err),
+                }
             },
             Err(err) => print_aws_err!(err),
         }
@@ -113,6 +129,12 @@ impl<P> CTCLIObject for S3Client<P, Client>
     /// 1. 通过 Put方式上传本地文件（文件小于 100M）
     /// 2. 分段上传一个本地文件
     // TODO: 设置 Object上传时的冗余模式，使上传时可实现自定义分片模式
+    /// Upload an object to your bucket - You can easily upload a file to
+    /// S3, or upload directly an InputStream if you know the length of
+    /// the data in the stream. You can also specify your own metadata
+    /// when uploading to S3, which allows you set a variety of options
+    /// like content-type and content-encoding, plus additional metadata
+    /// specific to your applications.
     fn put(&self, bucket: String, key: String, path: &Path) {
         debug!("Put Object");
 
@@ -171,7 +193,6 @@ impl<P> CTCLIObject for S3Client<P, Client>
 
     // TODO: 实现多线程上传多个对象
 
-    /// 删除已上传的 Object（Delete）
     fn delete(&self, bucket: String, key: String) {
         debug!("Remove Object");
         match self.delete_object(&DeleteObjectRequest {

@@ -19,7 +19,8 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use time::Tm;
+//! CTYun OOS SDK
+
 use url::Url;
 use chrono::UTC;
 
@@ -47,9 +48,18 @@ use aws_sdk_rust::aws::common::credentials::{AwsCredentials, AwsCredentialsProvi
 use aws_sdk_rust::aws::s3::endpoint::{Endpoint, Signature};
 use aws_sdk_rust::aws::s3::s3client::S3Client;
 
+pub use super::object;
+
+/// A trait to abstract the idea of generate a pre-signed Url for an S3 object from a SignedRequest.
 pub trait CTSignedRequest<'a> {
+    /// Pre-signed SignedRequest use SignV2
     fn presigned(&mut self, creds: &AwsCredentials, date: &Option<String>) -> (String, String);
+
+    /// Add a value to the array of headers for the specified key.
+    /// Headers are kept sorted by key name for use at signing (BTreeMap).
+    /// But in the query the content don`t need to lowercase.(RFC2616)
     fn add_header_raw(&mut self, key: &str, value: &str);
+    /// Generate Url from a SignedRequest
     fn gen_url(&mut self) -> String;
 }
 
@@ -122,8 +132,6 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
         (date_str, signature)
     }
 
-    /// Add a value to the array of headers for the specified key.
-    /// Headers are kept sorted by key name for use at signing (BTreeMap)
     fn add_header_raw(&mut self, key: &str, value: &str) {
         // let key_lower = key.to_ascii_lowercase().to_string(); // RFC2616
         let key_lower = key.to_string(); // For Convert Request To Url
@@ -174,9 +182,10 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
     }
 }
 
+/// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
 pub trait CTClient<P> {
+    /// Set the CTYun OOS Config default
     fn default_ctyun_client(credentials_provider: P) -> Self;
-    fn test(&self);
 }
 
 impl<P> CTClient<P> for S3Client<P, Client>
@@ -198,21 +207,10 @@ impl<P> CTClient<P> for S3Client<P, Client>
             None, None, None);
         S3Client::new(credentials_provider, endpoint)
     }
-    fn test(&self) {
-        println!("test");
-    }
 }
 
 // From aws_sdk_rust::aws::common::signature
 // Private functions used to support the Signature Process...
-
-/// Mark string as AWS4-HMAC-SHA256 hashed
-pub fn string_to_sign_v4(date: Tm, hashed_canonical_request: &str, scope: &str) -> String {
-    format!("AWS4-HMAC-SHA256\n{}\n{}\n{}",
-            date.strftime("%Y%m%dT%H%M%SZ").unwrap(),
-            scope,
-            hashed_canonical_request)
-}
 
 fn canonical_values(values: &[Vec<u8>]) -> String {
     let mut st = String::new();

@@ -19,16 +19,62 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// NOTE: This attribute only needs to be set once.
+#![doc(html_logo_url = "https://lambdastackio.github.io/static/images/lambdastack-200x200.png",
+html_favicon_url = "https://lambdastackio.github.io/static/images/favicon.ico",
+html_root_url = "https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/index.html")]
+
+//! `ct_sdk` is a Keep-It-Simple-Stupid CTYun OOS SDK for Rust.
+//!
+//! ## About
+//!
+//! `ct_sdk` is based on `aws_sdk_rust` and add some method.
+//!
+//! ## Quick Example
+//!
+//! At first, Connecting to the CTYun Object-Oriented-Storage Service.
+//!
+//! **NOTE:** The Config of CTYun OOS in the method [`default_ctyun_client`](ct/sdk/trait.CTClient.html#tymethod.default_ctyun_client) by trait `cli::CTClient`.
+//!
+//! The following examples show a quick example of list buckets.
+//! For more advanced usage, such as `share_object` is added, But other usage like CURD of
+//! object, bucket see the [documentation](https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/index.html),
+//!
+//! ```
+//! # extern crate aws_sdk_rust;
+//! # extern crate ct_sdk;
+//!
+//! # use aws_sdk_rust::aws::common::credentials::DefaultCredentialsProvider;
+//! # use aws_sdk_rust::aws::s3::s3client::S3Client;
+//! # use ct_sdk::sdk::CTClient;
+//!
+//! # fn main() {
+//!     let provider = DefaultCredentialsProvider::new(None).unwrap();
+//!     let s3 = S3Client::default_ctyun_client(provider);
+//!
+//!     match s3.list_buckets() {
+//!         Ok(out) => println!("{:#?}", out),
+//!         Err(err) => println!("{:#?}", err),
+//!     }
+//! # }
+//! ```
+
+#![crate_type= "lib"]
 extern crate aws_sdk_rust;
 extern crate url;
 #[macro_use]
 extern crate log;
-extern crate time;
 extern crate hyper;
 extern crate chrono;
 extern crate openssl;
 extern crate rustc_serialize;
 
-pub mod ct;
+mod ct;
 
 pub use ct::sdk;
+
+
+#[cfg(test)]
+mod tests {
+
+}

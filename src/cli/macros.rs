@@ -35,6 +35,7 @@ macro_rules! table {
     };
 }
 
+/// Print struct by prettytable to std.
 #[macro_export]
 macro_rules! printstd {
     ($s:expr, $( $key:ident ), *) => ({
