@@ -49,12 +49,13 @@ extern crate rustc_serialize;
 
 use clap::{ArgMatches};
 
-use aws_sdk_rust::aws::common::credentials::*;
-use aws_sdk_rust::aws::s3::s3client::S3Client;
-
 mod cli;
+use cli::S3Client;
 use cli::CTClient;
+use cli::DefaultCredentialsProvider;
 
+
+// http://oos-bj2.ctyunapi.cn
 fn main() {
     env_logger::init().unwrap();
     debug!("ct-cli start...");
@@ -74,11 +75,11 @@ fn main() {
                 (@arg quiet: -q --quiet "Only display Names")
             )
             (@subcommand new =>
-                (about: "Create a bucket")
+                (about: "Create a BUCKET")
                 (@arg name: +required +takes_value "Bucket while be create")
             )
             (@subcommand rm =>
-                (about: "Delete bucket")
+                (about: "Delete BUCKET")
                 (@arg name: +required +takes_value "Bucket while be delete")
             )
         )
@@ -125,11 +126,21 @@ fn main() {
     let provider = DefaultCredentialsProvider::new(None).unwrap();
     let s3 = S3Client::default_ctyun_client(provider);
     debug!("OOS connected.");
-    // use cli::object::CTCLIObject;
-    // s3.share(String::from("gitai"), String::from("date.txt"), None);
-    // s3.list(false, String::from("gitai"), None);
-    use cli::bucket::CTCLIBucket;
-    s3.create(String::from("gitai.test"));
-    s3.delete(String::from("gitai.test"));
+    {
+        use cli::object::CTCLIObject;
+        // s3.share(String::from("gitai"), String::from("date.txt"), None);
+        s3.list(false, String::from("gitai"), None);
+        // use cli::bucket::CTCLIBucket;
+    }
+
+    // s3.create(String::from("gitai.test"));
+    //s3.acl(String::from("gitai.test"), CannedAcl::PublicReadWrite);
+    // s3.delete(String::from("gitai.test"));
+    {
+        use cli::iam::CTCLIAM;
+        s3.list();
+    }
     debug!("end");
 }
+
+

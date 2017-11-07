@@ -29,7 +29,6 @@ use hyper::header::Headers;
 
 use std::str;
 use std::io::Write;
-use std::ascii::AsciiExt;
 use std::collections::BTreeMap;
 use std::collections::btree_map::Entry;
 
@@ -49,6 +48,7 @@ use aws_sdk_rust::aws::s3::endpoint::{Endpoint, Signature};
 use aws_sdk_rust::aws::s3::s3client::S3Client;
 
 pub use super::object;
+pub use super::iam;
 
 /// A trait to abstract the idea of generate a pre-signed Url for an S3 object from a SignedRequest.
 pub trait CTSignedRequest<'a> {
@@ -65,7 +65,7 @@ pub trait CTSignedRequest<'a> {
 
 impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
     fn presigned(&mut self, creds: &AwsCredentials, date: &Option<String>) -> (String, String) {
-        // NOTE: Check the bucket and path
+        // NOTE: Check the BUCKET and path
         if self.endpoint.is_bucket_virtual {
             if self.bucket.contains(".") && !self.path.contains(&format!("/{}/", self.bucket)) {
                 self.path = format!("/{}{}", self.bucket, self.path);
@@ -95,8 +95,8 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
 
         let md5 = self.get_header("Content-MD5");
 
-        // NOTE: canonical_headers_v2 may should pull back /{bucket}/{key}
-        // AWS takes bucket (host) and uses it for calc
+        // NOTE: canonical_headers_v2 may should pull back /{BUCKET}/{key}
+        // AWS takes BUCKET (host) and uses it for calc
 
         let string_to_sign = format!("{}\n{}\n\n{}\n{}{}",
                                      &self.method,
@@ -311,7 +311,7 @@ fn canonical_headers_v2(headers: &BTreeMap<String, Vec<Vec<u8>>>) -> String {
     canonical
 }
 
-// NOTE: If bucket contains '.' it is already formatted in path so just encode it.
+// NOTE: If BUCKET contains '.' it is already formatted in path so just encode it.
 fn canonical_resources_v2(bucket: &str, path: &str, is_bucket_virtual: bool) -> String {
     if bucket.to_string().contains(".") || !is_bucket_virtual {
         encode_uri(path)

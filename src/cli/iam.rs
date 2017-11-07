@@ -23,39 +23,45 @@ use hyper::client::Client;
 
 use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::s3client::S3Client;
-use aws_sdk_rust::aws::s3::bucket::*;
 
 pub use prettytable::Table;
 pub use prettytable::row::Row;
 pub use prettytable::cell::Cell;
 pub use prettytable::format::FormatBuilder;
 
-pub trait CTCLIAdmin {
-    fn list_access_key(&self, quiet:bool, bucket:&str);
-    fn create_access_key(&self, quiet:bool, bucket:&str);
-    fn delete_access_key(&self, quiet:bool, bucket:&str);
-    fn update_access_key(&self, quiet:bool, bucket:&str);
+use ct_sdk::sdk::iam::*;
+
+pub trait CTCLIAM {
+    fn list(&self);
+    fn create(&self, quiet:bool, bucket:&str);
+    fn delete(&self, quiet:bool, bucket:&str);
+    fn update(&self, quiet:bool, bucket:&str);
 }
 
-impl<P> CTCLIAdmin for S3Client<P, Client>
+impl<P> CTCLIAM for S3Client<P, Client>
     where P: AwsCredentialsProvider,
 {
-    fn list_access_key(&self, quiet: bool, bucket: &str) {
-
+    fn list(&self) {
+        match self.list_access_key(&ListAccessKeyRequest {
+            ..Default::default()
+        }) {
+            Ok(out) => {println!("{:?}", out)},
+            Err(err) => println!("{:?}", err),
+        }
     }
 
     /// 创建一组 AK/SK
-    fn create_access_key(&self, quiet: bool, bucket: &str) {
+    fn create(&self, quiet: bool, bucket: &str) {
         unimplemented!()
     }
 
     /// 删除已有的 AK/SK
-    fn delete_access_key(&self, quiet: bool, bucket: &str) {
+    fn delete(&self, quiet: bool, bucket: &str) {
         unimplemented!()
     }
 
     /// 更改 AK/SK属性（主秘钥/普通秘钥）
-    fn update_access_key(&self, quiet: bool, bucket: &str) {
+    fn update(&self, quiet: bool, bucket: &str) {
         unimplemented!()
     }
 }

@@ -1,0 +1,23 @@
+<ListAccessKeysResponse>
+    <ListAccessKeysResult>
+        <UserName>Bob</UserName>
+        <AccessKeyMetadata>
+            <member>
+                <UserName>Bob</UserName>
+                <AccessKeyId>2d1d5625f6202b08c8db</AccessKeyId>
+                <Status>Active</Status>
+                <IsPrimary>true</IsPrimary>
+            </member>
+            <member>
+                <UserName>Bob</UserName>
+                <AccessKeyId>2d1d5625f6202b08c8dd</AccessKeyId>
+                <Status>Inactive</Status>
+                <IsPrimary>false</IsPrimary>
+            </member>
+        </AccessKeyMetadata>
+        <IsTruncated>false</IsTruncated>
+    </ListAccessKeysResult>
+    <ResponseMetadata>
+        <RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId>
+    </ResponseMetadata>
+</ListAccessKeysResponse>

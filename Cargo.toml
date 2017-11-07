@@ -1,5 +1,5 @@
 [package]
-name = "ct-sdk"
+name = "ct"
 version = "0.1.0"
 authors = ["Hans Chris Jones", "Gitai <i@gitai.me>"]
 license = "Apache-2.0"
@@ -16,6 +16,14 @@ Important Enhancements:
 
 Works only for S3. Other AWS Storage features are coming soon!
 """
+
+[lib]
+name = "ct_sdk"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ct-cli"
+path = "src/main.rs"
 
 [dependencies]
 aws-sdk-rust = "0.1.42"

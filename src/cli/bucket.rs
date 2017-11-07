@@ -24,6 +24,7 @@ use hyper::client::Client;
 use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::s3client::S3Client;
 use aws_sdk_rust::aws::s3::bucket::*;
+use aws_sdk_rust::aws::s3::acl::*;
 
 pub use prettytable::Table;
 pub use prettytable::row::Row;
@@ -35,14 +36,18 @@ pub trait CTCLIBucket {
     fn list(&self);
 
     /// 创建一个 Bucket
-    /// Creates an bucket(mb)
+    /// Creates an BUCKET(mb)
     fn create(&self, name: String);
 
+    /// 创建一个 Bucket
+    /// Creates an BUCKET(mb)
+    fn acl(&self, name: String, acl: CannedAcl);
+
     /// 删除已创建的 Bucket
-    /// Deletes an empty bucket.(rb)
-    /// A bucket must be completely empty of objects and versioned objects before it can be deleted.
-    /// However, the --force parameter can be used to delete the non-versioned objects in the bucket
-    /// before the bucket is deleted.
+    /// Deletes an empty BUCKET.(rb)
+    /// A BUCKET must be completely empty of objects and versioned objects before it can be deleted.
+    /// However, the --force parameter can be used to delete the non-versioned objects in the BUCKET
+    /// before the BUCKET is deleted.
     fn delete(&self, name: String);
 }
 
@@ -69,6 +74,17 @@ impl<P> CTCLIBucket for S3Client<P, Client>
     }
 
     // TODO: 更改创建的 Bucket属性（私有、公有、只读）
+    fn acl(&self, name: String, acl: CannedAcl) {
+        debug!("acl");
+        match self.put_bucket_acl(&PutBucketAclRequest {
+            bucket: name.clone(),
+            acl: Some(acl),
+            ..Default::default()
+        }) {
+            Ok(_) => println!("Update ACL of {} SUCCESS.", name),
+            Err(err) => print_aws_err!(err),
+        };
+    }
 
     fn delete(&self, name: String) {
         debug!("Delete Bucket");

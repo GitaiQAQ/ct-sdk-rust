@@ -38,8 +38,8 @@ pub use prettytable::row::Row;
 pub use prettytable::cell::Cell;
 pub use prettytable::format::FormatBuilder;
 
-//! High-level OOS object operations commands
-//! Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+/// High-level OOS object operations commands
+/// Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
 
 /// Additional object operations commands for S3Client.
 pub trait CTCLIObject {
@@ -51,7 +51,7 @@ pub trait CTCLIObject {
     fn put(&self, bucket: String, key: String, path: &Path);
 
     /// 删除已上传的 Object（Delete）
-    /// Deletes an object
+    /// Deletes an object(rm)
     fn delete(&self, bucket: String, key: String);
 
     /// 分享已上传的 Object（Share）
@@ -129,7 +129,7 @@ impl<P> CTCLIObject for S3Client<P, Client>
     /// 1. 通过 Put方式上传本地文件（文件小于 100M）
     /// 2. 分段上传一个本地文件
     // TODO: 设置 Object上传时的冗余模式，使上传时可实现自定义分片模式
-    /// Upload an object to your bucket - You can easily upload a file to
+    /// Upload an object to your BUCKET - You can easily upload a file to
     /// S3, or upload directly an InputStream if you know the length of
     /// the data in the stream. You can also specify your own metadata
     /// when uploading to S3, which allows you set a variety of options
@@ -193,6 +193,7 @@ impl<P> CTCLIObject for S3Client<P, Client>
 
     // TODO: 实现多线程上传多个对象
 
+    // recursive: bool
     fn delete(&self, bucket: String, key: String) {
         debug!("Remove Object");
         match self.delete_object(&DeleteObjectRequest {

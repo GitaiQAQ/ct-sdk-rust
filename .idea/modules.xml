@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ct-cli.iml" filepath="$PROJECT_DIR$/ct-cli.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ct.iml" filepath="$PROJECT_DIR$/ct.iml" />
     </modules>
   </component>
 </project>

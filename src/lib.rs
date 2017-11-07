@@ -38,7 +38,7 @@ html_root_url = "https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/i
 //!
 //! The following examples show a quick example of list buckets.
 //! For more advanced usage, such as `share_object` is added, But other usage like CURD of
-//! object, bucket see the [documentation](https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/index.html),
+//! object, BUCKET see the [documentation](https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/index.html),
 //!
 //! ```
 //! # extern crate aws_sdk_rust;
@@ -67,6 +67,7 @@ extern crate log;
 extern crate hyper;
 extern crate chrono;
 extern crate openssl;
+extern crate xml;
 extern crate rustc_serialize;
 
 mod ct;
