@@ -33,9 +33,9 @@ use ct_sdk::sdk::iam::*;
 
 pub trait CTCLIAM {
     fn list(&self);
-    fn create(&self, quiet:bool, bucket:&str);
-    fn delete(&self, quiet:bool, bucket:&str);
-    fn update(&self, quiet:bool, bucket:&str);
+    fn create(&self);
+    fn delete(&self, access_key_id:String);
+    fn update(&self, access_key_id:String);
 }
 
 impl<P> CTCLIAM for S3Client<P, Client>
@@ -51,17 +51,32 @@ impl<P> CTCLIAM for S3Client<P, Client>
     }
 
     /// 创建一组 AK/SK
-    fn create(&self, quiet: bool, bucket: &str) {
-        unimplemented!()
+    fn create(&self) {
+        match self.create_access_key() {
+            Ok(out) => {println!("{:?}", out)},
+            Err(err) => println!("{:?}", err),
+        }
     }
 
     /// 删除已有的 AK/SK
-    fn delete(&self, quiet: bool, bucket: &str) {
-        unimplemented!()
+    fn delete(&self, access_key_id:String) {
+        match self.delete_access_key(&DeleteAccessKeyRequest{
+            access_key_id,
+        }) {
+            Ok(out) => {println!("{:?}", out)},
+            Err(err) => println!("{:?}", err),
+        }
     }
 
     /// 更改 AK/SK属性（主秘钥/普通秘钥）
-    fn update(&self, quiet: bool, bucket: &str) {
-        unimplemented!()
+    fn update(&self, access_key_id:String) {
+        match self.update_access_key(&UpdateAccessKeyRequest{
+            access_key_id,
+            status: Status::Inactive,
+            is_primary: true,
+        }) {
+            Ok(out) => {println!("{:?}", out)},
+            Err(err) => println!("{:?}", err),
+        }
     }
 }

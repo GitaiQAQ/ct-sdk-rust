@@ -1,23 +1,20 @@
-<ListAccessKeysResponse>
-    <ListAccessKeysResult>
-        <UserName>Bob</UserName>
-        <AccessKeyMetadata>
-            <member>
-                <UserName>Bob</UserName>
-                <AccessKeyId>2d1d5625f6202b08c8db</AccessKeyId>
-                <Status>Active</Status>
-                <IsPrimary>true</IsPrimary>
-            </member>
-            <member>
-                <UserName>Bob</UserName>
-                <AccessKeyId>2d1d5625f6202b08c8dd</AccessKeyId>
-                <Status>Inactive</Status>
-                <IsPrimary>false</IsPrimary>
-            </member>
-        </AccessKeyMetadata>
-        <IsTruncated>false</IsTruncated>
-    </ListAccessKeysResult>
+<?xml version="1.0" encoding="UTF-8"?>
+<CreateAccessKeyResponse>
+    <CreateAccessKeyResult>
+        <AccessKey>
+            <UserName>i@gitai.me</UserName>
+            <AccessKeyId>f30ced6ad96c016eacee</AccessKeyId>
+            <Status>Active</Status>
+            <IsPrimary>false</IsPrimary>
+            <SecretAccessKey>8d613ce711c0a83e2c3a14b1d323bf71ba96174b</SecretAccessKey>
+        </AccessKey>
+    </CreateAccessKeyResult>
     <ResponseMetadata>
-        <RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId>
+        <RequestId>a764fb440dc24992</RequestId>
     </ResponseMetadata>
-</ListAccessKeysResponse>
+</CreateAccessKeyResponse>
+<DeleteAccessKeyResponse>
+    <ResponseMetadata>
+        <RequestId>3b608849b7e34011</RequestId>
+    </ResponseMetadata>
+</DeleteAccessKeyResponse>

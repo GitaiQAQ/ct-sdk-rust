@@ -126,19 +126,21 @@ fn main() {
     let provider = DefaultCredentialsProvider::new(None).unwrap();
     let s3 = S3Client::default_ctyun_client(provider);
     debug!("OOS connected.");
-    {
+    /*{
         use cli::object::CTCLIObject;
         // s3.share(String::from("gitai"), String::from("date.txt"), None);
         s3.list(false, String::from("gitai"), None);
         // use cli::bucket::CTCLIBucket;
-    }
+    }*/
 
     // s3.create(String::from("gitai.test"));
     //s3.acl(String::from("gitai.test"), CannedAcl::PublicReadWrite);
     // s3.delete(String::from("gitai.test"));
     {
         use cli::iam::CTCLIAM;
-        s3.list();
+        // s3.create();
+        // s3.delete(String::from("d72e05685a5e7d7b0eb7"));
+        s3.update(String::from("2aa302a2e7182784409e"));
     }
     debug!("end");
 }
