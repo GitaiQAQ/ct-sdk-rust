@@ -40,7 +40,7 @@ pub use prettytable::format::FormatBuilder;
 
 /// Additional object operations commands for CTClient.
 pub trait CTCLIObject {
-    fn list(&self, quiet:bool, bucket: String, prefix: Option<String>);
+    fn list(&self, quiet: bool, bucket: String, prefix: Option<String>);
     fn new(&self, bucket: String, key: String, body: String);
 
     /// 下载已上传的 Object到本地（Download）
@@ -63,9 +63,9 @@ impl<P> CTCLIObject for CTClient<P>
 {
     // TODO: list 出带前缀“prefix/”的所有对象, 读取这些对象, 删除其他对象 (Pipeline)
     // TODO: cto ls test -p prefix | cto get | cto del --other
-    fn list(&self, _quiet:bool, bucket: String, prefix: Option<String>) {
+    fn list(&self, _quiet: bool, bucket: String, prefix: Option<String>) {
         debug!("List Objects");
-        match self.list_objects(&ListObjectsRequest{
+        match self.list_objects(&ListObjectsRequest {
             bucket,
             prefix,
             ..Default::default()
@@ -90,7 +90,7 @@ impl<P> CTCLIObject for CTClient<P>
                 } else {
                     println!("Create {} with \'{}\' to {}", key, body, bucket);
                 }
-            },
+            }
             Err(err) => print_aws_err!(err),
         }
     }
@@ -109,7 +109,7 @@ impl<P> CTCLIObject for CTClient<P>
                         debug!("{:#?}", e);
                         println!("Error reading file {}", e);
                         return;
-                    },
+                    }
                 };
 
                 match file.write_all(out.get_body()) {
@@ -119,7 +119,7 @@ impl<P> CTCLIObject for CTClient<P>
                     }
                     Err(err) => println!("{}", err),
                 }
-            },
+            }
             Err(err) => print_aws_err!(err),
         }
     }
@@ -140,8 +140,8 @@ impl<P> CTCLIObject for CTClient<P>
                 for entry in entries {
                     if let Ok(entry) = entry {
                         self.put(bucket.clone(),
-                                   entry.path().into_os_string().into_string().unwrap(),
-                                   entry.path().as_ref());
+                                 entry.path().into_os_string().into_string().unwrap(),
+                                 entry.path().as_ref());
                     }
                 }
             }
@@ -154,7 +154,7 @@ impl<P> CTCLIObject for CTClient<P>
                 debug!("{:#?}", error);
                 println!("{}", error);
                 return;
-            },
+            }
         };
 
         let metadata = file.metadata().unwrap();
@@ -162,7 +162,7 @@ impl<P> CTCLIObject for CTClient<P>
         let mut buffer: Vec<u8> = Vec::with_capacity(metadata.len() as usize);
 
         match file.take(metadata.len()).read_to_end(&mut buffer) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => println!("{}", err),
         }
 
@@ -179,7 +179,7 @@ impl<P> CTCLIObject for CTClient<P>
             Ok(output) => {
                 debug!("{:#?}", output);
                 println!("Put {} to {}", key, bucket);
-            },
+            }
             Err(err) => print_aws_err!(err),
         }
     }
@@ -212,7 +212,7 @@ impl<P> CTCLIObject for CTClient<P>
             Ok(output) => {
                 debug!("{:#?}", output);
                 println!("Delete {} from {}", key, bucket);
-            },
+            }
             Err(err) => print_aws_err!(err),
         }
     }

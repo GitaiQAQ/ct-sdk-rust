@@ -47,7 +47,7 @@ extern crate ct_sdk;
 extern crate prettytable;
 extern crate rustc_serialize;
 
-use clap::{ArgMatches};
+use clap::ArgMatches;
 
 mod cli;
 // use cli::S3Client;
@@ -148,7 +148,6 @@ fn main() {
         // s3.create();
         // s3.delete(String::from("d72e05685a5e7d7b0eb7"));
         // s3.update(String::from("2aa302a2e7182784409e"));
-
     }
     debug!("end");
 }

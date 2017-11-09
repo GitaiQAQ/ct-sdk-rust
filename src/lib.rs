@@ -59,7 +59,7 @@ html_root_url = "https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/i
 //! # }
 //! ```
 
-#![crate_type= "lib"]
+#![crate_type = "lib"]
 extern crate aws_sdk_rust;
 extern crate url;
 #[macro_use]
@@ -80,6 +80,7 @@ pub use aws_sdk_rust::aws;
 #[cfg(test)]
 mod tests {
     use openssl::rsa::Rsa;
+
     #[test]
     fn test() {
         Rsa

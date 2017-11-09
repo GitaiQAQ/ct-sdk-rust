@@ -48,6 +48,8 @@ env_logger = "0.4.3"
 prettytable-rs = "^0.6"
 clap = "2.26.2"
 
+rust-crypto = "^0.2"
+
 [dev-dependencies]
 # NOTE: term is only used for the example
 term = "0.4"

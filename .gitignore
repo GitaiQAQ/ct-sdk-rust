@@ -1,0 +1,7 @@
+target
+Cargo.lock
+hyper
+.cargo
+
+# Ignore temp file for testing
+test.multipart.upload.file

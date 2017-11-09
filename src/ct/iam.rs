@@ -360,22 +360,21 @@ impl UpdateAccessKeyOutputParser {
 
 
 pub trait CTClientIAM {
-    fn list_access_key(&self, input:&ListAccessKeyRequest)
-        -> Result<ListAccessKeyOutput, S3Error>;
+    fn list_access_key(&self, input: &ListAccessKeyRequest)
+                       -> Result<ListAccessKeyOutput, S3Error>;
     fn create_access_key(&self)
-        -> Result<CreateAccessKeyOutput, S3Error>;
-    fn delete_access_key(&self, input:&DeleteAccessKeyRequest)
-        -> Result<DeleteAccessKeyOutput, S3Error>;
-    fn update_access_key(&self, input:&UpdateAccessKeyRequest)
-        -> Result<UpdateAccessKeyOutput, S3Error>;
+                         -> Result<CreateAccessKeyOutput, S3Error>;
+    fn delete_access_key(&self, input: &DeleteAccessKeyRequest)
+                         -> Result<DeleteAccessKeyOutput, S3Error>;
+    fn update_access_key(&self, input: &UpdateAccessKeyRequest)
+                         -> Result<UpdateAccessKeyOutput, S3Error>;
 }
 
 impl<P> CTClientIAM for CTClient<P>
     where P: AwsCredentialsProvider,
 {
-
-    fn list_access_key(&self, input:&ListAccessKeyRequest)
-                              -> Result<ListAccessKeyOutput, S3Error> {
+    fn list_access_key(&self, input: &ListAccessKeyRequest)
+                       -> Result<ListAccessKeyOutput, S3Error> {
         let mut request = SignedRequest::new(
             "POST",
             "s3",
@@ -403,17 +402,17 @@ impl<P> CTClientIAM for CTClient<P>
             200 => {
                 stack.next(); // ListAccessKeysResponse
                 Ok(try!(ListAccessKeyOutputParser::parse_xml("ListAccessKeysResult", &mut stack)))
-            },
+            }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
                 Err(S3Error::with_aws("Error listing access keys", aws))
-            },
+            }
         }
     }
 
     /// 创建一组 AK/SK
     fn create_access_key(&self)
-        -> Result<CreateAccessKeyOutput, S3Error>
+                         -> Result<CreateAccessKeyOutput, S3Error>
     {
         let mut request = SignedRequest::new(
             "POST",
@@ -442,17 +441,17 @@ impl<P> CTClientIAM for CTClient<P>
             200 => {
                 stack.next(); // CreateAccessKeyResponse
                 Ok(try!(CreateAccessKeyOutputParser::parse_xml("CreateAccessKeyResult", &mut stack)))
-            },
+            }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
                 Err(S3Error::with_aws("Error listing access keys", aws))
-            },
+            }
         }
     }
 
     /// 删除已有的 AK/SK
-    fn delete_access_key(&self, input:&DeleteAccessKeyRequest)
-        -> Result<DeleteAccessKeyOutput, S3Error>
+    fn delete_access_key(&self, input: &DeleteAccessKeyRequest)
+                         -> Result<DeleteAccessKeyOutput, S3Error>
     {
         let payload: Vec<u8>;
         let mut request = SignedRequest::new(
@@ -483,17 +482,17 @@ impl<P> CTClientIAM for CTClient<P>
             200 => {
                 stack.next(); // DeleteAccessKeyResponse
                 Ok(try!(DeleteAccessKeyOutputParser::parse_xml("ResponseMetadata", &mut stack)))
-            },
+            }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
                 Err(S3Error::with_aws("Error listing access keys", aws))
-            },
+            }
         }
     }
 
     /// 更改 AK/SK属性（主秘钥/普通秘钥）
-    fn update_access_key(&self, input:&UpdateAccessKeyRequest)
-        -> Result<UpdateAccessKeyOutput, S3Error>
+    fn update_access_key(&self, input: &UpdateAccessKeyRequest)
+                         -> Result<UpdateAccessKeyOutput, S3Error>
     {
         let payload: Vec<u8>;
         let mut request = SignedRequest::new(
@@ -507,9 +506,9 @@ impl<P> CTClientIAM for CTClient<P>
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
         let body = format!("Action=UpdateAccessKey&AccessKeyId={}&Status={}&IsPrimary={}",
-                            &input.access_key_id,
-                            &input.status,
-                            &input.is_primary);
+                           &input.access_key_id,
+                           &input.status,
+                           &input.is_primary);
 
         payload = body.into_bytes();
         request.set_payload(Some(&payload));
@@ -533,11 +532,11 @@ impl<P> CTClientIAM for CTClient<P>
                 Ok(UpdateAccessKeyOutput {
                     request_id: result.headers.get("x-amz-request-id").unwrap().to_string(),
                 })
-            },
+            }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
                 Err(S3Error::with_aws("Error listing access keys", aws))
-            },
+            }
         }
     }
 }
@@ -557,10 +556,10 @@ mod tests {
         let provider = DefaultCredentialsProvider::new(None).unwrap();
         let s3 = S3Client::default_ctyun_client(provider);
 
-        match s3.list_access_key( &ListAccessKeyRequest {
+        match s3.list_access_key(&ListAccessKeyRequest {
             ..Default::default()
         }) {
-            Ok(out) => {println!("{:?}", out)},
+            Ok(out) => { println!("{:?}", out) }
             Err(err) => println!("{:?}", err),
         }
     }

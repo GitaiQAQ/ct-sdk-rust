@@ -71,7 +71,7 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
                 self.path = format!("/{}{}", self.bucket, self.path);
             }
         } else if !self.path.contains(&format!("/{}/", self.bucket)) {
-            self.path = format!("{}{}{}", if self.bucket.len() > 0 {"/"} else {""}, self.bucket, self.path);
+            self.path = format!("{}{}{}", if self.bucket.len() > 0 { "/" } else { "" }, self.bucket, self.path);
         } // Leave untouched if none of the above match
 
         // Signature::V2
@@ -110,12 +110,12 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
         match self.payload {
             None => {
                 self.update_header("Content-Length", &format!("{}", 0));
-            },
+            }
             Some(payload) => {
                 self.update_header("Content-Length", &format!("{}", payload.len()));
                 // println!("--------payload---------");
                 // println!("{:#?}", payload);
-            },
+            }
         }
 
         // println!("canonical_query_string {:#?}", self.canonical_query_string);
@@ -142,10 +142,10 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
                 let mut values = Vec::new();
                 values.push(value_vec);
                 entry.insert(values);
-            },
+            }
             Entry::Occupied(entry) => {
                 entry.into_mut().push(value_vec);
-            },
+            }
         }
     }
 
@@ -222,7 +222,7 @@ impl<P> CTClient<P>
                 Err(e) => {
                     error!("{:#?}", e);
                     None
-                },
+                }
             },
             None, None, None);
 
@@ -240,7 +240,7 @@ impl<P> CTClient<P>
     /// Set the CTYun OOS Config default
     #[allow(unused_variables)]
     pub fn default_ctyun_securely_client(credentials_provider: P)
-        -> Self
+                                         -> Self
     {
         CTClient::new(credentials_provider, Some(String::from("test231")))
     }
@@ -307,20 +307,20 @@ fn build_hostname(service: &str, region: Region) -> String {
                 Region::CnNorth1 => format!("{}.{}.amazonaws.com.cn", service, region),
                 _ => format!("{}.amazonaws.com", service),
             }
-        },
+        }
         "s3" => {
             match region {
                 Region::UsEast1 => "s3.amazonaws.com".to_string(),
                 Region::CnNorth1 => format!("s3.{}.amazonaws.com.cn", region),
                 _ => format!("s3-{}.amazonaws.com", region),
             }
-        },
+        }
         _ => {
             match region {
                 Region::CnNorth1 => format!("{}.{}.amazonaws.com.cn", service, region),
                 _ => format!("{}.{}.amazonaws.com", service, region),
             }
-        },
+        }
     }
 }
 // Common to V2 and V4 - End
@@ -336,7 +336,7 @@ fn canonical_headers_v2(headers: &BTreeMap<String, Vec<Vec<u8>>>) -> String {
             continue;
         } else {
             match item.0.to_ascii_lowercase().find("x-amz-") {
-                None => {},
+                None => {}
                 _ => canonical.push_str(format!("{}:{}\n",
                                                 item.0.to_ascii_lowercase(),
                                                 canonical_values(item.1))
@@ -359,13 +359,13 @@ fn canonical_resources_v2(bucket: &str, path: &str, is_bucket_virtual: bool) -> 
                     "" => "/".to_string(),
                     _ => encode_uri(path),  // This assumes / as leading char
                 }
-            },
+            }
             _ => {
                 match path {
                     "" => format!("/{}/", bucket),
                     _ => encode_uri(&format!("/{}{}", bucket, path)),  // This assumes path with leading / char
                 }
-            },
+            }
         }
     }
 }

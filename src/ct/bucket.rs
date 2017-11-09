@@ -43,13 +43,13 @@ mod tests {
             bucket: String::from(BUCKET),
             ..Default::default()
         }) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => assert!(false, err),
         }
 
-        match s3.head_bucket(&HeadBucketRequest{
+        match s3.head_bucket(&HeadBucketRequest {
             bucket: String::from(BUCKET)
-        }){
+        }) {
             Ok(_) => assert!(true),
             Err(err) => assert!(false, err),
         };
@@ -65,11 +65,11 @@ mod tests {
                 print!("{:?}", out);
                 for bucket in out.buckets {
                     if bucket.name == BUCKET {
-                        return
+                        return;
                     }
                 }
                 assert!(false, format!("Bucket {} not found", BUCKET))
-            },
+            }
             Err(err) => assert!(false, err),
         }
     }
@@ -84,22 +84,22 @@ mod tests {
             acl: Some(CannedAcl::PublicReadWrite),
             ..Default::default()
         }) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => assert!(false, err),
         };
 
-        match s3.get_bucket_acl(&GetBucketAclRequest{
+        match s3.get_bucket_acl(&GetBucketAclRequest {
             bucket: String::from(BUCKET),
         }) {
             Ok(acl) => {
                 for grant in acl.acl.grants {
                     if grant.permission.eq("FULL_CONTROL") {
                         assert!(true);
-                        return
+                        return;
                     }
                 }
                 assert!(false, format!("FULL_CONTROL not found in bucket {}`s permission", BUCKET))
-            },
+            }
             Err(err) => assert!(false, err),
         };
     }
@@ -109,16 +109,16 @@ mod tests {
         let provider = DefaultCredentialsProvider::new(None).unwrap();
         let s3 = CTClient::default_ctyun_client(provider);
 
-        match s3.delete_bucket(&DeleteBucketRequest{
+        match s3.delete_bucket(&DeleteBucketRequest {
             bucket: String::from(BUCKET),
         }) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => assert!(false, err),
         }
 
-        match s3.head_bucket(&HeadBucketRequest{
+        match s3.head_bucket(&HeadBucketRequest {
             bucket: String::from(BUCKET)
-        }){
+        }) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true),
         };

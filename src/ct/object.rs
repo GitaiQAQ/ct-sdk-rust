@@ -50,21 +50,21 @@ pub trait CTClientObject<P> {
     /// }
     /// ```
     fn presigned_object(&self, input: &PresignedObjectRequest)
-        -> Result<String, S3Error>;
+                        -> Result<String, S3Error>;
 }
 
 impl<P> CTClientObject<P> for CTClient<P>
     where P: AwsCredentialsProvider,
 {
     fn presigned_object(&self, input: &PresignedObjectRequest)
-        -> Result<String, S3Error>
+                        -> Result<String, S3Error>
     {
         let mut request = SignedRequest::new("GET",
-             "s3",
-             self.region(),
-             &input.bucket,
-             &format!("/{}", input.key),
-             self.endpoint());
+                                             "s3",
+                                             self.region(),
+                                             &input.bucket,
+                                             &format!("/{}", input.key),
+                                             self.endpoint());
 
         // TODO: new PR for make the methor public
         let hostname = self.hostname(Some(&input.bucket));
@@ -97,16 +97,16 @@ impl<P> CTClientObject<P> for CTClient<P>
 use aws_sdk_rust::aws::common::common::Operation;
 
 pub trait CTClientEncryptionObject<P> {
-    fn put_object_securely(&self,input: &PutObjectRequest, operation: Option<&mut Operation>)
-                               -> Result<PutObjectOutput, S3Error>;
+    fn put_object_securely(&self, input: &PutObjectRequest, operation: Option<&mut Operation>)
+                           -> Result<PutObjectOutput, S3Error>;
 }
 
 impl<P> CTClientEncryptionObject<P> for CTClient<P>
     where P: AwsCredentialsProvider,
 {
     #[allow(unused_variables)]
-    fn put_object_securely(&self,input: &PutObjectRequest, operation: Option<&mut Operation>)
-                               -> Result<PutObjectOutput, S3Error>
+    fn put_object_securely(&self, input: &PutObjectRequest, operation: Option<&mut Operation>)
+                           -> Result<PutObjectOutput, S3Error>
     {
         // self.multipart_upload_create()
         // encrypt_file(input.body);
@@ -134,9 +134,8 @@ use crypto::*;
 use crypto::buffer::*;
 
 
-
 /// https://github.com/DaGenix/rust-crypto/issues/330
-fn encrypt_file(src_file:&Path, dest_file:&Path, key:&Vec<u8>)
+fn encrypt_file(src_file: &Path, dest_file: &Path, key: &Vec<u8>)
                 -> Result<(), symmetriccipher::SymmetricCipherError> {
     let mut input = File::open(src_file).unwrap();
     let mut output = OpenOptions::new()
@@ -168,8 +167,8 @@ fn encrypt_file(src_file:&Path, dest_file:&Path, key:&Vec<u8>)
                 } else if size > 0 && size < buffer_size {
                     data.truncate(size);
                 }
-            },
-            Err(err) => { println!("Error in read file: {:?}", err);},
+            }
+            Err(err) => { println!("Error in read file: {:?}", err); }
         };
 
         let mut read_buffer = buffer::RefReadBuffer::new(&data);
