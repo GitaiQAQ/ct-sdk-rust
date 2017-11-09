@@ -28,6 +28,3 @@ pub mod bucket;
 pub mod iam;
 
 pub use ct_sdk::sdk::CTClient;
-
-pub use aws_sdk_rust::aws::common::credentials::*;
-pub use aws_sdk_rust::aws::s3::s3client::S3Client;

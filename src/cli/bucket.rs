@@ -19,12 +19,11 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use hyper::client::Client;
-
-use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
-use aws_sdk_rust::aws::s3::s3client::S3Client;
-use aws_sdk_rust::aws::s3::bucket::*;
-use aws_sdk_rust::aws::s3::acl::*;
+use ct_sdk::aws::s3::acl::CannedAcl;
+use ct_sdk::aws::common::credentials::AwsCredentialsProvider;
+use ct_sdk::aws::s3::bucket::*;
+use ct_sdk::aws::s3::acl::*;
+use ct_sdk::sdk::CTClient;
 
 pub use prettytable::Table;
 pub use prettytable::row::Row;
@@ -51,7 +50,7 @@ pub trait CTCLIBucket {
     fn delete(&self, name: String);
 }
 
-impl<P> CTCLIBucket for S3Client<P, Client>
+impl<P> CTCLIBucket for CTClient<P>
     where P: AwsCredentialsProvider,
 {
     fn list(&self) {

@@ -19,10 +19,7 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use hyper::client::Client;
-
-use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
-use aws_sdk_rust::aws::s3::s3client::S3Client;
+use ct_sdk::sdk::CTClient;
 
 pub use prettytable::Table;
 pub use prettytable::row::Row;
@@ -38,14 +35,14 @@ pub trait CTCLIAM {
     fn update(&self, access_key_id:String);
 }
 
-impl<P> CTCLIAM for S3Client<P, Client>
+impl<P> CTCLIAM for CTClient<P>
     where P: AwsCredentialsProvider,
 {
     fn list(&self) {
         match self.list_access_key(&ListAccessKeyRequest {
             ..Default::default()
         }) {
-            Ok(out) => {println!("{:?}", out)},
+            Ok(out) => printstd!(out.access_key_metadata.member, user_name, access_key_id, status, is_primary),
             Err(err) => println!("{:?}", err),
         }
     }

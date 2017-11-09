@@ -70,12 +70,18 @@ extern crate openssl;
 extern crate xml;
 extern crate rustc_serialize;
 
+extern crate crypto;
+
 mod ct;
 
 pub use ct::sdk;
-
+pub use aws_sdk_rust::aws;
 
 #[cfg(test)]
 mod tests {
-
+    use openssl::rsa::Rsa;
+    #[test]
+    fn test() {
+        Rsa
+    }
 }

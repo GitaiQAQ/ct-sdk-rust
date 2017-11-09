@@ -25,13 +25,10 @@ use std::io::Read;
 use std::io::Write;
 use md5;
 
-use hyper::client::Client;
-
 use rustc_serialize::base64::{STANDARD, ToBase64};
-use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
-use aws_sdk_rust::aws::s3::s3client::S3Client;
-use aws_sdk_rust::aws::s3::object::*;
-use ct_sdk::sdk::object::{CTClientObject, PresignedObjectRequest};
+
+use ct_sdk::sdk::CTClient;
+use ct_sdk::sdk::object::*;
 
 pub use prettytable::Table;
 pub use prettytable::row::Row;
@@ -41,7 +38,7 @@ pub use prettytable::format::FormatBuilder;
 /// High-level OOS object operations commands
 /// Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
 
-/// Additional object operations commands for S3Client.
+/// Additional object operations commands for CTClient.
 pub trait CTCLIObject {
     fn list(&self, quiet:bool, bucket: String, prefix: Option<String>);
     fn new(&self, bucket: String, key: String, body: String);
@@ -50,6 +47,8 @@ pub trait CTCLIObject {
     fn get(&self, bucket: String, key: String, path: &Path);
     fn put(&self, bucket: String, key: String, path: &Path);
 
+    fn put_securely(&self, bucket: String, key: String, path: &Path);
+
     /// 删除已上传的 Object（Delete）
     /// Deletes an object(rm)
     fn delete(&self, bucket: String, key: String);
@@ -57,10 +56,9 @@ pub trait CTCLIObject {
     /// 分享已上传的 Object（Share）
     /// presign
     fn share(&self, bucket: String, key: String, expires: Option<String>);
-
 }
 
-impl<P> CTCLIObject for S3Client<P, Client>
+impl<P> CTCLIObject for CTClient<P>
     where P: AwsCredentialsProvider,
 {
     // TODO: list 出带前缀“prefix/”的所有对象, 读取这些对象, 删除其他对象 (Pipeline)
@@ -137,7 +135,6 @@ impl<P> CTCLIObject for S3Client<P, Client>
     /// specific to your applications.
     fn put(&self, bucket: String, key: String, path: &Path) {
         debug!("Put Object");
-
         if path.is_dir() {
             if let Ok(entries) = path.read_dir() {
                 for entry in entries {
@@ -188,6 +185,17 @@ impl<P> CTCLIObject for S3Client<P, Client>
     }
 
     // TODO: 设置专属签名，实现自定义加密，使用户拥有独特的签名方式
+    fn put_securely(&self, bucket: String, key: String, path: &Path) {
+        /*match self.put_object_securely(&PutObjectRequest{
+            ..Default::default()
+        }, None) {
+            Ok(output) => {
+                debug!("{:#?}", output);
+                println!("Put {} to {}", key, bucket);
+            },
+            Err(err) => print_aws_err!(err),
+        }*/
+    }
 
     // TODO: 通过 Post方式上传本地文件（文件小于 100M）
 

@@ -23,12 +23,10 @@
 //!
 use std::str;
 use std::str::FromStr;
-
-use hyper::client::Client;
+use std::fmt::{Display, Formatter, Error};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
-use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
-use aws_sdk_rust::aws::s3::s3client::S3Client;
+pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::s3client::sign_and_execute;
 
 use aws_sdk_rust::aws::common::xmlutil::*;
@@ -36,6 +34,8 @@ use aws_sdk_rust::aws::common::common::*;
 use aws_sdk_rust::aws::errors::aws::AWSError;
 
 use aws_sdk_rust::aws::errors::s3::S3Error;
+
+use ct::sdk::CTClient;
 
 use xml::EventReader;
 
@@ -51,11 +51,11 @@ pub enum Status {
     Inactive,
 }
 
-impl ToString for Status {
-    fn to_string(&self) -> String {
-        return match self {
-            &Status::Active => String::from("active"),
-            _ => String::from("inactive")
+impl Display for Status {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        match self {
+            &Status::Active => write!(f, "active"),
+            _ => write!(f, "inactive")
         }
     }
 }
@@ -370,7 +370,7 @@ pub trait CTClientIAM {
         -> Result<UpdateAccessKeyOutput, S3Error>;
 }
 
-impl<P> CTClientIAM for S3Client<P, Client>
+impl<P> CTClientIAM for CTClient<P>
     where P: AwsCredentialsProvider,
 {
 
@@ -508,7 +508,7 @@ impl<P> CTClientIAM for S3Client<P, Client>
 
         let body = format!("Action=UpdateAccessKey&AccessKeyId={}&Status={}&IsPrimary={}",
                             &input.access_key_id,
-                            &input.status.to_string(),
+                            &input.status,
                             &input.is_primary);
 
         payload = body.into_bytes();

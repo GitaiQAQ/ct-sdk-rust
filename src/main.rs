@@ -50,16 +50,15 @@ extern crate rustc_serialize;
 use clap::{ArgMatches};
 
 mod cli;
-use cli::S3Client;
+// use cli::S3Client;
+use ct_sdk::aws::common::credentials::DefaultCredentialsProvider;
 use cli::CTClient;
-use cli::DefaultCredentialsProvider;
-
 
 // http://oos-bj2.ctyunapi.cn
+#[allow(unused_variables)]
 fn main() {
     env_logger::init().unwrap();
     debug!("ct-cli start...");
-
     let _matches: ArgMatches = clap_app!(myapp =>
         (version: "0.1")
         (author: "Gitai<i@gitai.me>")
@@ -124,23 +123,32 @@ fn main() {
     debug!("OOS connecting.");
 
     let provider = DefaultCredentialsProvider::new(None).unwrap();
-    let s3 = S3Client::default_ctyun_client(provider);
+    let s3 = CTClient::default_ctyun_securely_client(provider);
     debug!("OOS connected.");
-    /*{
-        use cli::object::CTCLIObject;
+
+    {
+        // use cli::object::CTCLIObject;
         // s3.share(String::from("gitai"), String::from("date.txt"), None);
-        s3.list(false, String::from("gitai"), None);
+        // s3.list(false, String::from("gitai"), None);
         // use cli::bucket::CTCLIBucket;
-    }*/
+    }
+
+    {
+        use cli::object::CTCLIObject;
+        use std::path::Path;
+        s3.put_securely(String::from("gitai.test"), String::from("/tmp/Xorg.crouton.1.log"), Path::new("/tmp/Xorg.crouton.1.log"));
+    }
 
     // s3.create(String::from("gitai.test"));
     //s3.acl(String::from("gitai.test"), CannedAcl::PublicReadWrite);
     // s3.delete(String::from("gitai.test"));
     {
-        use cli::iam::CTCLIAM;
+        // use cli::iam::CTCLIAM;
+        // s3.list();
         // s3.create();
         // s3.delete(String::from("d72e05685a5e7d7b0eb7"));
-        s3.update(String::from("2aa302a2e7182784409e"));
+        // s3.update(String::from("2aa302a2e7182784409e"));
+
     }
     debug!("end");
 }

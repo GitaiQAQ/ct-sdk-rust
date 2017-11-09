@@ -182,16 +182,36 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
     }
 }
 
-/// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
-pub trait CTClient<P> {
-    /// Set the CTYun OOS Config default
-    fn default_ctyun_client(credentials_provider: P) -> Self;
-}
+/// Used to perform client-side encryption for storing data securely in OOS. Data
+/// encryption is done using a one-time randomly generated content encryption
+/// key (CEK) per S3 object.
+///
+/// http://docs.aws.amazon.com/zh_cn/AmazonS3/latest/dev/encrypt-client-side-symmetric-master-key.html
+/// https://github.com/deg4uss3r/postio
+use std::ops::Deref;
 
-impl<P> CTClient<P> for S3Client<P, Client>
+/// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
+#[derive(Debug)]
+pub struct CTClient<P>
     where P: AwsCredentialsProvider,
 {
-    fn default_ctyun_client(credentials_provider: P) -> Self {
+    p: S3Client<P, Client>,
+    key: Option<String>,
+}
+
+impl<P> Deref for CTClient<P>
+    where P: AwsCredentialsProvider,
+{
+    type Target = S3Client<P, Client>;
+    fn deref<'a>(&'a self) -> &'a S3Client<P, Client> {
+        &self.p
+    }
+}
+
+impl<P> CTClient<P>
+    where P: AwsCredentialsProvider,
+{
+    pub fn new(credentials_provider: P, securely_key: Option<String>) -> CTClient<P> {
         // Init new s3 connect
         // V4 is the default signature for AWS. However, other systems also use V2.
         let endpoint = Endpoint::new(
@@ -205,7 +225,24 @@ impl<P> CTClient<P> for S3Client<P, Client>
                 },
             },
             None, None, None);
-        S3Client::new(credentials_provider, endpoint)
+
+        CTClient {
+            key: securely_key,
+            p: S3Client::new(credentials_provider, endpoint),
+        }
+    }
+
+    /// Set the CTYun OOS Config default
+    pub fn default_ctyun_client(credentials_provider: P) -> Self {
+        CTClient::new(credentials_provider, None)
+    }
+
+    /// Set the CTYun OOS Config default
+    #[allow(unused_variables)]
+    pub fn default_ctyun_securely_client(credentials_provider: P)
+        -> Self
+    {
+        CTClient::new(credentials_provider, Some(String::from("test231")))
     }
 }
 
