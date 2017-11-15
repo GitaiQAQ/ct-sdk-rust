@@ -19,16 +19,16 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use ct_sdk::aws::s3::acl::CannedAcl;
-use ct_sdk::aws::common::credentials::AwsCredentialsProvider;
-use ct_sdk::aws::s3::bucket::*;
-use ct_sdk::aws::s3::acl::*;
-use ct_sdk::sdk::CTClient;
+use ct_sdk::ct::s3::acl::CannedAcl;
+use ct_sdk::ct::common::credentials::AwsCredentialsProvider;
+use ct_sdk::ct::s3::bucket::*;
+use ct_sdk::ct::s3::acl::*;
+use ct_sdk::ct::sdk::CTClient;
 
-pub use prettytable::Table;
-pub use prettytable::row::Row;
-pub use prettytable::cell::Cell;
-pub use prettytable::format::FormatBuilder;
+use prettytable::Table;
+use prettytable::row::Row;
+use prettytable::cell::Cell;
+use prettytable::format::FormatBuilder;
 
 pub trait CTCLIBucket {
     /// List buckets(ls)

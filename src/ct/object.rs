@@ -20,13 +20,15 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! Additional API for Object Operations
+//!
+use md5;
+use rustc_serialize::base64::{STANDARD, ToBase64};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
 pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 
 use aws_sdk_rust::aws::s3::bucket::*;
 pub use aws_sdk_rust::aws::s3::object::*;
-
 use aws_sdk_rust::aws::errors::s3::S3Error;
 
 use ct::sdk::CTClient;
@@ -96,28 +98,90 @@ impl<P> CTClientObject<P> for CTClient<P>
 
 use aws_sdk_rust::aws::common::common::Operation;
 
+
+//#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
+pub struct PostObjectRequest {
+
+}
+
+//#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
+pub struct PostObjectOutput {
+
+}
+
 pub trait CTClientEncryptionObject<P> {
-    fn put_object_securely(&self, input: &PutObjectRequest, operation: Option<&mut Operation>)
+    fn put_object_securely(&self, input: PutObjectRequest, operation: Option<&mut Operation>)
                            -> Result<PutObjectOutput, S3Error>;
+
+    fn get_object_securely(&self, input: &GetObjectRequest, operation: Option<&mut Operation>)
+                           -> Result<GetObjectOutput, S3Error>;
+
+    fn post_object(&self, input: &PostObjectRequest)
+                   -> Result<PostObjectOutput, S3Error>;
 }
 
 impl<P> CTClientEncryptionObject<P> for CTClient<P>
     where P: AwsCredentialsProvider,
 {
-    #[allow(unused_variables)]
-    fn put_object_securely(&self, input: &PutObjectRequest, operation: Option<&mut Operation>)
+    fn put_object_securely(&self, input: PutObjectRequest, operation: Option<&mut Operation>)
                            -> Result<PutObjectOutput, S3Error>
     {
-        // self.multipart_upload_create()
-        // encrypt_file(input.body);
-        println!("put_object_securely");
-        Err(S3Error {
-            message: String::new(),
-            ..Default::default()
-        })
+        // let mut request = PutObjectRequest::from(*input);
+        // input.metadata.unwrap().len() as usize
+        let mut cipherbody = vec![0u8; 4096];
+        {
+            let plaintext = input.body.unwrap();
+            cipherbody = vec![0u8; plaintext.len() + (16 - plaintext.len()%16)];
+            encrypt(&plaintext, &mut cipherbody);
+            //let mut plain_out: Vec<u8> = repeat(0).take(plaintext.len()).collect();
+            //decrypt(&cipherbody, &mut plain_out);
+            // println!("cipherbody {:?}", String::from_utf8_lossy(&cipherbody));
+        }
+
+        let mut request = PutObjectRequest::from(input);
+        request.body = Some(&cipherbody);
+
+        // Compute hash - Hash is slow
+        let hash = md5::compute(request.body.unwrap()).to_base64(STANDARD);
+        request.content_md5 = Some(hash);
+
+        self.put_object(&request, operation)
+    }
+
+    fn get_object_securely(&self, input: &GetObjectRequest, operation: Option<&mut Operation>)
+                            -> Result<GetObjectOutput, S3Error>
+    {
+        match self.get_object(input, operation) {
+            Ok(out) => {
+                let mut output = GetObjectOutput::from(out);
+
+                let mut plaintext: Vec<u8>;
+                {
+                    plaintext = vec![0u8; output.get_body().len()];
+                }
+                {
+                    let cipherbody = &output.get_body();
+                    decrypt(&cipherbody, &mut plaintext);
+                    // println!("plaintext {:?}", String::from_utf8_lossy(&plaintext));
+                }
+                if output.is_body {
+                    output.body = plaintext;
+                } else {
+                    output.body_buffer = plaintext;
+                }
+                Ok(output)
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    fn post_object(&self, input: &PostObjectRequest)
+        -> Result<PostObjectOutput, S3Error> {
+        unimplemented!()
     }
 }
-
 
 // use openssl::rsa::Rsa;
 
@@ -132,7 +196,58 @@ use crypto::buffer::ReadBuffer;
 
 use crypto::*;
 use crypto::buffer::*;
+use std::iter::repeat;
 
+/// The size of the buffers used when reading and decompressing data
+pub const BUFFER_SIZE: usize = 4096;
+
+fn encrypt(plaintext: &[u8], ciphertext: &mut [u8]) {
+    let key:Vec<u8> = repeat(1).take(16).collect();
+    let iv:Vec<u8> = repeat(3).take(16).collect();
+
+    let mut encryptor = aes::cbc_encryptor(
+        aes::KeySize::KeySize256,
+        &key[..],
+        &iv.clone(),
+        blockmodes::PkcsPadding);
+
+    {
+        let mut buff_in = RefReadBuffer::new(&plaintext);
+        let mut buff_out = RefWriteBuffer::new(ciphertext);
+
+        let result = encryptor.encrypt(
+            &mut buff_in,
+            &mut buff_out,
+            true);
+
+        match result {
+            Ok(_BufferUnderflow) => {}
+            Err(err) => panic!("Error {:?}", err)
+        }
+    }
+}
+
+
+fn decrypt(ciphertext: &[u8], plaintext: &mut [u8]) {
+    let key:Vec<u8> = repeat(1).take(16).collect();
+    let iv:Vec<u8> = repeat(3).take(16).collect();
+
+    let mut decryptor = aes::cbc_decryptor(
+        aes::KeySize::KeySize256,
+        &key[..],
+        &iv.clone(),
+        blockmodes::PkcsPadding);
+
+    {
+        let mut buff_in = RefReadBuffer::new(&ciphertext);
+        let mut buff_out = RefWriteBuffer::new(plaintext);
+
+        match decryptor.decrypt(&mut buff_in, &mut buff_out, true) {
+            Ok(_BufferUnderflow) => {}
+            Err(err) => panic!("Error {:?}", err)
+        }
+    }
+}
 
 /// https://github.com/DaGenix/rust-crypto/issues/330
 fn encrypt_file(src_file: &Path, dest_file: &Path, key: &Vec<u8>)
@@ -185,6 +300,7 @@ fn encrypt_file(src_file: &Path, dest_file: &Path, key: &Vec<u8>)
                 BufferResult::BufferOverflow => {}
             }
         }
+
         if bytes_read == file_size {
             break;
         }

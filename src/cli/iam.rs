@@ -19,14 +19,14 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use ct_sdk::sdk::CTClient;
+use ct_sdk::ct::sdk::CTClient;
+use ct_sdk::ct::iam::*;
+use ct_sdk::ct::AwsCredentialsProvider;
 
-pub use prettytable::Table;
-pub use prettytable::row::Row;
-pub use prettytable::cell::Cell;
-pub use prettytable::format::FormatBuilder;
-
-use ct_sdk::sdk::iam::*;
+use prettytable::Table;
+use prettytable::row::Row;
+use prettytable::cell::Cell;
+use prettytable::format::FormatBuilder;
 
 pub trait CTCLIAM {
     fn list(&self);

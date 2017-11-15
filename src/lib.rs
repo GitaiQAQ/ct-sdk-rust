@@ -20,6 +20,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 // NOTE: This attribute only needs to be set once.
+
 #![doc(html_logo_url = "https://lambdastackio.github.io/static/images/lambdastack-200x200.png",
 html_favicon_url = "https://lambdastackio.github.io/static/images/favicon.ico",
 html_root_url = "https://lambdastackio.github.io/aws-sdk-rust/aws_sdk_rust/aws/index.html")]
@@ -64,25 +65,17 @@ extern crate aws_sdk_rust;
 extern crate url;
 #[macro_use]
 extern crate log;
+extern crate md5;
 extern crate hyper;
 extern crate chrono;
 extern crate openssl;
 extern crate xml;
 extern crate rustc_serialize;
-
 extern crate crypto;
 
-mod ct;
-
-pub use ct::sdk;
-pub use aws_sdk_rust::aws;
+pub mod ct;
 
 #[cfg(test)]
 mod tests {
-    use openssl::rsa::Rsa;
 
-    #[test]
-    fn test() {
-        Rsa
-    }
 }

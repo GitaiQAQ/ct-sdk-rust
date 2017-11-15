@@ -26,7 +26,7 @@ use std::str::FromStr;
 use std::fmt::{Display, Formatter, Error};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
-pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
+use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::s3client::sign_and_execute;
 
 use aws_sdk_rust::aws::common::xmlutil::*;
@@ -82,7 +82,7 @@ pub struct AccessKeyMetadataList {
 }
 
 //#[derive(Debug, Default)]
-#[derive(Debug, Default, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
 pub struct ListAccessKeyRequest {
     pub max_items: Option<String>,
     pub marker: Option<String>,
@@ -375,6 +375,8 @@ impl<P> CTClientIAM for CTClient<P>
 {
     fn list_access_key(&self, input: &ListAccessKeyRequest)
                        -> Result<ListAccessKeyOutput, S3Error> {
+        let input = input.clone();
+        let payload: Vec<u8>;
         let mut request = SignedRequest::new(
             "POST",
             "s3",
@@ -385,8 +387,22 @@ impl<P> CTClientIAM for CTClient<P>
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
-        request.set_payload(Some("Action=ListAccessKey".as_bytes()));
-        // request.add_param("MaxItems", "10");
+        let max_items = match input.max_items {
+            Some(max_items) => max_items.to_string(),
+            _ => "".to_string(),
+        };
+
+        let marker = match input.marker {
+            Some(marker) => marker.to_string(),
+            _ => "".to_string(),
+        };
+
+        let body = format!("Action=ListAccessKey&MaxItems={}&Marker={}",
+                           &max_items,
+                           &marker);
+
+        payload = body.into_bytes();
+        request.set_payload(Some(&payload));
 
         let result = sign_and_execute(&self.dispatcher,
                                       &mut request,

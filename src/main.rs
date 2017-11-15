@@ -37,11 +37,9 @@
 // NOTE: See the src/main.rs for more examples...
 #[macro_use]
 extern crate clap;
-extern crate aws_sdk_rust;
 #[macro_use]
 extern crate log;
 extern crate md5;
-extern crate hyper;
 extern crate env_logger;
 extern crate ct_sdk;
 extern crate prettytable;
@@ -51,7 +49,7 @@ use clap::ArgMatches;
 
 mod cli;
 // use cli::S3Client;
-use ct_sdk::aws::common::credentials::DefaultCredentialsProvider;
+use ct_sdk::ct::common::credentials::DefaultCredentialsProvider;
 use cli::CTClient;
 
 // http://oos-bj2.ctyunapi.cn
@@ -59,7 +57,7 @@ use cli::CTClient;
 fn main() {
     env_logger::init().unwrap();
     debug!("ct-cli start...");
-    let _matches: ArgMatches = clap_app!(myapp =>
+    /*let _matches: ArgMatches = clap_app!(myapp =>
         (version: "0.1")
         (author: "Gitai<i@gitai.me>")
         (about: "Does awesome things")
@@ -118,14 +116,13 @@ fn main() {
         )
         (@arg aws_access_key_id: -a --ak +takes_value "AK/AWS Access Key Id")
         (@arg aws_secret_access_key: -s --sk +takes_value "SK/AWS Secret Access Key")
-    ).get_matches();
+    ).get_matches();*/
 
     debug!("OOS connecting.");
 
     let provider = DefaultCredentialsProvider::new(None).unwrap();
     let s3 = CTClient::default_ctyun_securely_client(provider);
     debug!("OOS connected.");
-
     {
         // use cli::object::CTCLIObject;
         // s3.share(String::from("gitai"), String::from("date.txt"), None);
@@ -134,9 +131,28 @@ fn main() {
     }
 
     {
-        use cli::object::CTCLIObject;
         use std::path::Path;
-        s3.put_securely(String::from("gitai.test"), String::from("/tmp/Xorg.crouton.1.log"), Path::new("/tmp/Xorg.crouton.1.log"));
+        use cli::object::CTCLIObject;
+        /*s3.put(
+            String::from("gitai.test"),
+            String::from("date.txt"),
+            Path::new("/home/gitai/date.txt"),
+            None);*/
+        /*s3.put_securely(
+            String::from("gitai.test"),
+            String::from("date_securely.txt"),
+            Path::new("/home/gitai/date.txt"),
+            None);*/
+        s3.list(false, String::from("gitai.test"), Some("/data".to_string()));
+        /*s3.get(
+            String::from("gitai.test"),
+            String::from("date.txt"));*/
+        /*s3.get(
+            String::from("gitai.test"),
+            String::from("date_securely.txt"));*/
+        /*s3.get_securely(
+            String::from("gitai.test"),
+            String::from("date_securely.txt"));*/
     }
 
     // s3.create(String::from("gitai.test"));

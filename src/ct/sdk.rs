@@ -20,6 +20,10 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! CTYun OOS SDK
+//! 对　AWS SDK for rust 进行拓展
+//! 增加了
+//! 1. 自定义加密上传
+//! 2. 预签名
 
 use url::Url;
 use chrono::UTC;
@@ -46,9 +50,6 @@ use aws_sdk_rust::aws::common::signature::SignedRequest;
 use aws_sdk_rust::aws::common::credentials::{AwsCredentials, AwsCredentialsProvider};
 use aws_sdk_rust::aws::s3::endpoint::{Endpoint, Signature};
 use aws_sdk_rust::aws::s3::s3client::S3Client;
-
-pub use super::object;
-pub use super::iam;
 
 /// A trait to abstract the idea of generate a pre-signed Url for an S3 object from a SignedRequest.
 pub trait CTSignedRequest<'a> {

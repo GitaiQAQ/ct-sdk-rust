@@ -27,14 +27,13 @@ use md5;
 
 use rustc_serialize::base64::{STANDARD, ToBase64};
 
-use ct_sdk::sdk::CTClient;
-use ct_sdk::sdk::object::*;
+use ct_sdk::ct::sdk::CTClient;
+use ct_sdk::ct::object::*;
 
-pub use prettytable::Table;
-pub use prettytable::row::Row;
-pub use prettytable::cell::Cell;
-pub use prettytable::format::FormatBuilder;
-
+use prettytable::Table;
+use prettytable::row::Row;
+use prettytable::cell::Cell;
+use prettytable::format::FormatBuilder;
 /// High-level OOS object operations commands
 /// Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
 
@@ -43,11 +42,16 @@ pub trait CTCLIObject {
     fn list(&self, quiet: bool, bucket: String, prefix: Option<String>);
     fn new(&self, bucket: String, key: String, body: String);
 
-    /// 下载已上传的 Object到本地（Download）
-    fn get(&self, bucket: String, key: String, path: &Path);
-    fn put(&self, bucket: String, key: String, path: &Path);
+    fn get(&self, bucket: String, key: String);
+    fn get_securely(&self, bucket: String, key: String);
 
-    fn put_securely(&self, bucket: String, key: String, path: &Path);
+    /// 下载已上传的 Object到本地（Download）
+    fn download(&self, bucket: String, key: String, path: &Path);
+    fn download_securely(&self, bucket: String, key: String, path: &Path);
+
+    fn put(&self, bucket: String, key: String, path: &Path, storage_class: Option<String>);
+
+    fn put_securely(&self, bucket: String, key: String, path: &Path, storage_class: Option<String>);
 
     /// 删除已上传的 Object（Delete）
     /// Deletes an object(rm)
@@ -95,7 +99,63 @@ impl<P> CTCLIObject for CTClient<P>
         }
     }
 
-    fn get(&self, bucket: String, key: String, path: &Path) {
+    fn get(&self, bucket: String, key: String) {
+        debug!("Downland Object");
+        match self.get_object(&GetObjectRequest {
+            bucket: bucket.clone(),
+            key: key.clone(),
+            ..Default::default()
+        }, None) {
+            Ok(out) => println!("+--[ START ]----+\n{}\n+--[  END  ]----+",
+                                String::from_utf8_lossy(out.get_body())),
+            Err(err) => print_aws_err!(err),
+        }
+    }
+
+
+    fn get_securely(&self, bucket: String, key: String) {
+        debug!("Downland Object");
+        match self.get_object_securely(&GetObjectRequest {
+            bucket: bucket.clone(),
+            key: key.clone(),
+            ..Default::default()
+        }, None) {
+            Ok(out) => println!("+--[ START ]----+\n{}\n+--[  END  ]----+",
+                                String::from_utf8_lossy(out.get_body())),
+            Err(err) => print_aws_err!(err),
+        }
+    }
+
+    fn download(&self, bucket: String, key: String, path: &Path) {
+        debug!("Downland Object");
+        match self.get_object(&GetObjectRequest {
+            bucket: bucket.clone(),
+            key: key.clone(),
+            ..Default::default()
+        }, None) {
+            Ok(out) => {
+                let mut file = match File::create(path) {
+                    Ok(file) => file,
+                    Err(e) => {
+                        debug!("{:#?}", e);
+                        println!("Error reading file {}", e);
+                        return;
+                    }
+                };
+
+                match file.write_all(out.get_body()) {
+                    Ok(out) => {
+                        debug!("{:#?}", out);
+                        println!("Download {} from {}", key, bucket);
+                    }
+                    Err(err) => println!("{}", err),
+                }
+            }
+            Err(err) => print_aws_err!(err),
+        }
+    }
+
+    fn download_securely(&self, bucket: String, key: String, path: &Path) {
         debug!("Downland Object");
         match self.get_object(&GetObjectRequest {
             bucket: bucket.clone(),
@@ -133,7 +193,7 @@ impl<P> CTCLIObject for CTClient<P>
     /// when uploading to S3, which allows you set a variety of options
     /// like content-type and content-encoding, plus additional metadata
     /// specific to your applications.
-    fn put(&self, bucket: String, key: String, path: &Path) {
+    fn put(&self, bucket: String, key: String, path: &Path, storage_class: Option<String>) {
         debug!("Put Object");
         if path.is_dir() {
             if let Ok(entries) = path.read_dir() {
@@ -141,7 +201,8 @@ impl<P> CTCLIObject for CTClient<P>
                     if let Ok(entry) = entry {
                         self.put(bucket.clone(),
                                  entry.path().into_os_string().into_string().unwrap(),
-                                 entry.path().as_ref());
+                                 entry.path().as_ref(),
+                                 storage_class.clone());
                     }
                 }
             }
@@ -168,6 +229,8 @@ impl<P> CTCLIObject for CTClient<P>
 
         let mut request = PutObjectRequest::default();
         request.bucket = bucket.clone();
+        request.storage_class = storage_class;
+
         request.key = key.clone();
         request.body = Some(&buffer);
 
@@ -185,16 +248,39 @@ impl<P> CTCLIObject for CTClient<P>
     }
 
     // TODO: 设置专属签名，实现自定义加密，使用户拥有独特的签名方式
-    fn put_securely(&self, bucket: String, key: String, path: &Path) {
-        /*match self.put_object_securely(&PutObjectRequest{
-            ..Default::default()
-        }, None) {
+    fn put_securely(&self, bucket: String, key: String, path: &Path, storage_class: Option<String>) {
+        let file = match File::open(path) {
+            Ok(file) => file,
+            Err(error) => {
+                debug!("{:#?}", error);
+                println!("{}", error);
+                return;
+            }
+        };
+
+        let metadata = file.metadata().unwrap();
+
+        let mut buffer: Vec<u8> = Vec::with_capacity(metadata.len() as usize);
+
+        match file.take(metadata.len()).read_to_end(&mut buffer) {
+            Ok(_) => {}
+            Err(err) => println!("{}", err),
+        }
+
+        let mut request = PutObjectRequest::default();
+        request.bucket = bucket.clone();
+        request.storage_class = storage_class;
+
+        request.key = key.clone();
+        request.body = Some(&buffer);
+
+        match self.put_object_securely(request, None) {
             Ok(output) => {
                 debug!("{:#?}", output);
                 println!("Put {} to {}", key, bucket);
             },
             Err(err) => print_aws_err!(err),
-        }*/
+        }
     }
 
     // TODO: 通过 Post方式上传本地文件（文件小于 100M）

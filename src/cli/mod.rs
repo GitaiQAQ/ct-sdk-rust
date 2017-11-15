@@ -27,4 +27,4 @@ pub mod object;
 pub mod bucket;
 pub mod iam;
 
-pub use ct_sdk::sdk::CTClient;
+pub use ct_sdk::ct::sdk::CTClient;

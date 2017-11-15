@@ -20,16 +20,10 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 pub use aws_sdk_rust::aws::s3::acl::CannedAcl::*;
-pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 pub use aws_sdk_rust::aws::s3::bucket::*;
 
 #[cfg(test)]
 mod tests {
-    use aws_sdk_rust::aws::common::credentials::*;
-    use aws_sdk_rust::aws::s3::acl::CannedAcl;
-    use aws_sdk_rust::aws::s3::bucket::*;
-    use aws_sdk_rust::aws::s3::acl::*;
-
     use super::super::sdk::CTClient;
 
     static BUCKET: &'static str = "gitai.test";
@@ -81,7 +75,7 @@ mod tests {
 
         match s3.put_bucket_acl(&PutBucketAclRequest {
             bucket: String::from(BUCKET),
-            acl: Some(CannedAcl::PublicReadWrite),
+            acl: Some(PublicReadWrite),
             ..Default::default()
         }) {
             Ok(_) => {}
