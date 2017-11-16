@@ -21,59 +21,47 @@
 
 use ct_sdk::ct::sdk::CTClient;
 use ct_sdk::ct::iam::*;
-use ct_sdk::ct::AwsCredentialsProvider;
 
 use prettytable::Table;
 use prettytable::row::Row;
 use prettytable::cell::Cell;
 use prettytable::format::FormatBuilder;
 
-pub trait CTCLIAM {
-    fn list(&self);
-    fn create(&self);
-    fn delete(&self, access_key_id: String);
-    fn update(&self, access_key_id: String);
+pub fn list(ct: &CTClient) {
+    match ct.list_access_key(&ListAccessKeyRequest {
+        ..Default::default()
+    }) {
+        Ok(out) => printstd!(out.access_key_metadata.member, user_name, access_key_id, status, is_primary),
+        Err(err) => println!("{:?}", err),
+    }
 }
 
-impl<P> CTCLIAM for CTClient<P>
-    where P: AwsCredentialsProvider,
-{
-    fn list(&self) {
-        match self.list_access_key(&ListAccessKeyRequest {
-            ..Default::default()
-        }) {
-            Ok(out) => printstd!(out.access_key_metadata.member, user_name, access_key_id, status, is_primary),
-            Err(err) => println!("{:?}", err),
-        }
+/// 创建一组 AK/SK
+pub fn create(ct: &CTClient) {
+    match ct.create_access_key() {
+        Ok(out) => { println!("{:?}", out) }
+        Err(err) => println!("{:?}", err),
     }
+}
 
-    /// 创建一组 AK/SK
-    fn create(&self) {
-        match self.create_access_key() {
-            Ok(out) => { println!("{:?}", out) }
-            Err(err) => println!("{:?}", err),
-        }
+/// 删除已有的 AK/SK
+pub fn delete(ct: &CTClient, access_key_id: String) {
+    match ct.delete_access_key(&DeleteAccessKeyRequest {
+        access_key_id,
+    }) {
+        Ok(out) => { println!("{:?}", out) }
+        Err(err) => println!("{:?}", err),
     }
+}
 
-    /// 删除已有的 AK/SK
-    fn delete(&self, access_key_id: String) {
-        match self.delete_access_key(&DeleteAccessKeyRequest {
-            access_key_id,
-        }) {
-            Ok(out) => { println!("{:?}", out) }
-            Err(err) => println!("{:?}", err),
-        }
-    }
-
-    /// 更改 AK/SK属性（主秘钥/普通秘钥）
-    fn update(&self, access_key_id: String) {
-        match self.update_access_key(&UpdateAccessKeyRequest {
-            access_key_id,
-            status: Status::Inactive,
-            is_primary: true,
-        }) {
-            Ok(out) => { println!("{:?}", out) }
-            Err(err) => println!("{:?}", err),
-        }
+/// 更改 AK/SK属性（主秘钥/普通秘钥）
+pub fn update(ct: &CTClient, access_key_id: String) {
+    match ct.update_access_key(&UpdateAccessKeyRequest {
+        access_key_id,
+        status: Status::Inactive,
+        is_primary: true,
+    }) {
+        Ok(out) => { println!("{:?}", out) }
+        Err(err) => println!("{:?}", err),
     }
 }

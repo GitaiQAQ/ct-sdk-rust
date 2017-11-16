@@ -47,7 +47,7 @@ use url::percent_encoding::{DEFAULT_ENCODE_SET, QUERY_ENCODE_SET, utf8_percent_e
 use aws_sdk_rust::aws::common::region::Region;
 use aws_sdk_rust::aws::common::params::Params;
 use aws_sdk_rust::aws::common::signature::SignedRequest;
-use aws_sdk_rust::aws::common::credentials::{AwsCredentials, AwsCredentialsProvider};
+use aws_sdk_rust::aws::common::credentials::{AwsCredentials, DefaultCredentialsProvider};
 use aws_sdk_rust::aws::s3::endpoint::{Endpoint, Signature};
 use aws_sdk_rust::aws::s3::s3client::S3Client;
 
@@ -192,27 +192,24 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
 use std::ops::Deref;
 
 /// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
-#[derive(Debug)]
-pub struct CTClient<P>
-    where P: AwsCredentialsProvider,
+
+pub struct CTClient
 {
-    p: S3Client<P, Client>,
+    p: S3Client<DefaultCredentialsProvider, Client>,
     key: Option<String>,
 }
 
-impl<P> Deref for CTClient<P>
-    where P: AwsCredentialsProvider,
+impl Deref for CTClient
 {
-    type Target = S3Client<P, Client>;
-    fn deref<'a>(&'a self) -> &'a S3Client<P, Client> {
+    type Target = S3Client<DefaultCredentialsProvider, Client>;
+    fn deref<'a>(&'a self) -> &'a S3Client<DefaultCredentialsProvider, Client> {
         &self.p
     }
 }
 
-impl<P> CTClient<P>
-    where P: AwsCredentialsProvider,
+impl CTClient
 {
-    pub fn new(credentials_provider: P, securely_key: Option<String>) -> CTClient<P> {
+    pub fn new(credentials_provider: DefaultCredentialsProvider, securely_key: Option<String>) -> CTClient {
         // Init new s3 connect
         // V4 is the default signature for AWS. However, other systems also use V2.
         let endpoint = Endpoint::new(
@@ -234,15 +231,16 @@ impl<P> CTClient<P>
     }
 
     /// Set the CTYun OOS Config default
-    pub fn default_ctyun_client(credentials_provider: P) -> Self {
+    pub fn default_ctyun_client() -> Self {
+        let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
         CTClient::new(credentials_provider, None)
     }
 
     /// Set the CTYun OOS Config default
     #[allow(unused_variables)]
-    pub fn default_ctyun_securely_client(credentials_provider: P)
-                                         -> Self
+    pub fn default_ctyun_securely_client() -> Self
     {
+        let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
         CTClient::new(credentials_provider, Some(String::from("test231")))
     }
 }

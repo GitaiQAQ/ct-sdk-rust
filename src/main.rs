@@ -49,7 +49,6 @@ use clap::ArgMatches;
 
 mod cli;
 // use cli::S3Client;
-use ct_sdk::ct::common::credentials::DefaultCredentialsProvider;
 use cli::CTClient;
 
 // http://oos-bj2.ctyunapi.cn
@@ -120,30 +119,58 @@ fn main() {
 
     debug!("OOS connecting.");
 
-    let provider = DefaultCredentialsProvider::new(None).unwrap();
-    let s3 = CTClient::default_ctyun_securely_client(provider);
+
+
     debug!("OOS connected.");
     {
         // use cli::object::CTCLIObject;
         // s3.share(String::from("gitai"), String::from("date.txt"), None);
-        // s3.list(false, String::from("gitai"), None);
-        // use cli::bucket::CTCLIBucket;
+
+        /*use std::thread;
+        use std::sync::{Arc, Mutex};
+        thread::spawn(|| {
+            use cli::bucket::*;
+            let s3 = CTClient::default_ctyun_securely_client();
+            create(&s3, String::from("testqaq"));
+            list(&s3);
+        });*/
+
     }
 
     {
+        /*use cli::bucket::*;
+        let s3 = CTClient::default_ctyun_securely_client();
+        create(&s3, String::from("testqaq"));
+        list(&s3);*/
+    }
+
+    {
+        /*use std::thread;
+        use std::sync::{Arc, Mutex};
+        thread::spawn(|| {
+            use cli::object::put;
+            let s3 = CTClient::default_ctyun_securely_client();
+            put(&s3,
+                String::from("testqaq"),
+                String::from(""),
+                Path::new("/home/gitai/project/stanford-cpp-library/autograder"),
+                None);
+        });*/
         use std::path::Path;
-        use cli::object::CTCLIObject;
-        /*s3.put(
-            String::from("gitai.test"),
-            String::from("date.txt"),
-            Path::new("/home/gitai/date.txt"),
-            None);*/
+        use cli::object::put_thread;
+        put_thread(String::from("testqaq"),
+            String::from(""),
+            Path::new("/home/gitai/project/stanford-cpp-library/autograder"),
+            None);
+    }
+
+    {
         /*s3.put_securely(
             String::from("gitai.test"),
             String::from("date_securely.txt"),
             Path::new("/home/gitai/date.txt"),
             None);*/
-        s3.list(false, String::from("gitai.test"), Some("/data".to_string()));
+        // list(s3, false, String::from("gitai.test"), Some("/data".to_string()));
         /*s3.get(
             String::from("gitai.test"),
             String::from("date.txt"));*/

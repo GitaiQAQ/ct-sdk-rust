@@ -20,7 +20,6 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use ct_sdk::ct::s3::acl::CannedAcl;
-use ct_sdk::ct::common::credentials::AwsCredentialsProvider;
 use ct_sdk::ct::s3::bucket::*;
 use ct_sdk::ct::s3::acl::*;
 use ct_sdk::ct::sdk::CTClient;
@@ -30,69 +29,53 @@ use prettytable::row::Row;
 use prettytable::cell::Cell;
 use prettytable::format::FormatBuilder;
 
-pub trait CTCLIBucket {
-    /// List buckets(ls)
-    fn list(&self);
-
-    /// 创建一个 Bucket
-    /// Creates an BUCKET(mb)
-    fn create(&self, name: String);
-
-    /// 创建一个 Bucket
-    /// Creates an BUCKET(mb)
-    fn acl(&self, name: String, acl: CannedAcl);
-
-    /// 删除已创建的 Bucket
-    /// Deletes an empty BUCKET.(rb)
-    /// A BUCKET must be completely empty of objects and versioned objects before it can be deleted.
-    /// However, the --force parameter can be used to delete the non-versioned objects in the BUCKET
-    /// before the BUCKET is deleted.
-    fn delete(&self, name: String);
+/// List buckets(ls)
+pub fn list(ct: &CTClient) {
+    debug!("List Bucket");
+    match ct.list_buckets() {
+        Ok(out) => printstd!(out.buckets, name, creation_date),
+        Err(err) => print_aws_err!(err),
+    }
 }
 
-impl<P> CTCLIBucket for CTClient<P>
-    where P: AwsCredentialsProvider,
-{
-    fn list(&self) {
-        debug!("List Bucket");
-        match self.list_buckets() {
-            Ok(out) => printstd!(out.buckets, name, creation_date),
-            Err(err) => print_aws_err!(err),
-        }
+/// 创建一个 Bucket
+/// Creates an BUCKET(mb)
+pub fn create(ct: &CTClient, name: String) {
+    debug!("Create Bucket");
+    match ct.create_bucket(&CreateBucketRequest {
+        bucket: name.clone(),
+        ..Default::default()
+    }) {
+        Ok(out) => println!("Create {} SUCCESS in {}", name, out.location),
+        Err(err) => print_aws_err!(err),
     }
+}
 
-    fn create(&self, name: String) {
-        debug!("Create Bucket");
-        match self.create_bucket(&CreateBucketRequest {
-            bucket: name.clone(),
-            ..Default::default()
-        }) {
-            Ok(out) => println!("Create {} SUCCESS in {}", name, out.location),
-            Err(err) => print_aws_err!(err),
-        }
-    }
+// TODO: 更改创建的 Bucket属性（私有、公有、只读）
+pub fn acl(ct: &CTClient, name: String, acl: CannedAcl) {
+    debug!("acl");
+    match ct.put_bucket_acl(&PutBucketAclRequest {
+        bucket: name.clone(),
+        acl: Some(acl),
+        ..Default::default()
+    }) {
+        Ok(_) => println!("Update ACL of {} SUCCESS.", name),
+        Err(err) => print_aws_err!(err),
+    };
+}
 
-    // TODO: 更改创建的 Bucket属性（私有、公有、只读）
-    fn acl(&self, name: String, acl: CannedAcl) {
-        debug!("acl");
-        match self.put_bucket_acl(&PutBucketAclRequest {
-            bucket: name.clone(),
-            acl: Some(acl),
-            ..Default::default()
-        }) {
-            Ok(_) => println!("Update ACL of {} SUCCESS.", name),
-            Err(err) => print_aws_err!(err),
-        };
-    }
-
-    fn delete(&self, name: String) {
-        debug!("Delete Bucket");
-        match self.delete_bucket(&DeleteBucketRequest {
-            bucket: name.clone(),
-            ..Default::default()
-        }) {
-            Ok(_) => println!("Remove {} SUCCESS", name),
-            Err(err) => print_aws_err!(err),
-        }
+/// 删除已创建的 Bucket
+/// Deletes an empty BUCKET.(rb)
+/// A BUCKET must be completely empty of objects and versioned objects before it can be deleted.
+/// However, the --force parameter can be used to delete the non-versioned objects in the BUCKET
+/// before the BUCKET is deleted.
+pub fn delete(ct: &CTClient, name: String) {
+    debug!("Delete Bucket");
+    match ct.delete_bucket(&DeleteBucketRequest {
+        bucket: name.clone(),
+        ..Default::default()
+    }) {
+        Ok(_) => println!("Remove {} SUCCESS", name),
+        Err(err) => print_aws_err!(err),
     }
 }

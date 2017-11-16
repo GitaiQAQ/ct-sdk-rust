@@ -370,8 +370,7 @@ pub trait CTClientIAM {
                          -> Result<UpdateAccessKeyOutput, S3Error>;
 }
 
-impl<P> CTClientIAM for CTClient<P>
-    where P: AwsCredentialsProvider,
+impl CTClientIAM for CTClient
 {
     fn list_access_key(&self, input: &ListAccessKeyRequest)
                        -> Result<ListAccessKeyOutput, S3Error> {

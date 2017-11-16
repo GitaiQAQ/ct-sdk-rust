@@ -43,7 +43,7 @@ pub struct PresignedObjectRequest {
 }
 
 /// A trait to additional pre-signed for CTClient.
-pub trait CTClientObject<P> {
+pub trait CTClientObject {
     /// Generate a pre-signed url for an S3 object, the returned url can be shared.
     /// ```
     /// match s3.presigned_object() {
@@ -55,8 +55,7 @@ pub trait CTClientObject<P> {
                         -> Result<String, S3Error>;
 }
 
-impl<P> CTClientObject<P> for CTClient<P>
-    where P: AwsCredentialsProvider,
+impl CTClientObject for CTClient
 {
     fn presigned_object(&self, input: &PresignedObjectRequest)
                         -> Result<String, S3Error>
@@ -111,7 +110,7 @@ pub struct PostObjectOutput {
 
 }
 
-pub trait CTClientEncryptionObject<P> {
+pub trait CTClientEncryptionObject {
     fn put_object_securely(&self, input: PutObjectRequest, operation: Option<&mut Operation>)
                            -> Result<PutObjectOutput, S3Error>;
 
@@ -122,8 +121,7 @@ pub trait CTClientEncryptionObject<P> {
                    -> Result<PostObjectOutput, S3Error>;
 }
 
-impl<P> CTClientEncryptionObject<P> for CTClient<P>
-    where P: AwsCredentialsProvider,
+impl CTClientEncryptionObject for CTClient
 {
     fn put_object_securely(&self, input: PutObjectRequest, operation: Option<&mut Operation>)
                            -> Result<PutObjectOutput, S3Error>
@@ -221,7 +219,7 @@ fn encrypt(plaintext: &[u8], ciphertext: &mut [u8]) {
             true);
 
         match result {
-            Ok(_BufferUnderflow) => {}
+            Ok(_buffer_underflow) => {}
             Err(err) => panic!("Error {:?}", err)
         }
     }
@@ -243,68 +241,8 @@ fn decrypt(ciphertext: &[u8], plaintext: &mut [u8]) {
         let mut buff_out = RefWriteBuffer::new(plaintext);
 
         match decryptor.decrypt(&mut buff_in, &mut buff_out, true) {
-            Ok(_BufferUnderflow) => {}
+            Ok(_buffer_underflow) => {}
             Err(err) => panic!("Error {:?}", err)
         }
     }
-}
-
-/// https://github.com/DaGenix/rust-crypto/issues/330
-fn encrypt_file(src_file: &Path, dest_file: &Path, key: &Vec<u8>)
-                -> Result<(), symmetriccipher::SymmetricCipherError> {
-    let mut input = File::open(src_file).unwrap();
-    let mut output = OpenOptions::new()
-        .create(true)
-        .truncate(true)
-        .write(true)
-        .open(dest_file).unwrap();
-
-    let iv = &[0u8; 16];
-
-    let mut encryptor = aes::cbc_encryptor(
-        aes::KeySize::KeySize128,
-        key,
-        iv,
-        blockmodes::PkcsPadding);
-
-    let file_size = input.metadata().unwrap().len();
-    let mut bytes_read: u64 = 0;
-    let buffer_size = 4096;
-    let mut data = vec![0u8; buffer_size];
-
-    loop {
-        let result = input.read(&mut data);
-        match result {
-            Ok(size) => {
-                bytes_read += size as u64;
-                if size == 0 {
-                    break;
-                } else if size > 0 && size < buffer_size {
-                    data.truncate(size);
-                }
-            }
-            Err(err) => { println!("Error in read file: {:?}", err); }
-        };
-
-        let mut read_buffer = buffer::RefReadBuffer::new(&data);
-        let mut buffer = [0; 4096];
-        let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
-
-        loop {
-            let result = encryptor.encrypt(&mut read_buffer, &mut write_buffer, bytes_read == file_size)
-                .expect("encrypt data");
-            output.write_all(write_buffer.take_read_buffer().take_remaining()).expect("write file");
-
-            match result {
-                BufferResult::BufferUnderflow => break,
-                BufferResult::BufferOverflow => {}
-            }
-        }
-
-        if bytes_read == file_size {
-            break;
-        }
-    }
-    println!("file size: {} vs {}", file_size, output.metadata().unwrap().len());
-    Ok(())
 }
