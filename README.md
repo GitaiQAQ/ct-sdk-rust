@@ -1,6 +1,6 @@
 # RCTYUN
 
-[Website](https://rctyun.gitai.me) | [Github](https://github.com/GitaiQAQ/RCTYUN)
+[Document](https://rctyun.gitai.me) | [Github](https://github.com/GitaiQAQ/RCTYUN)
 
 
 ## List of features
