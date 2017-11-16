@@ -42,7 +42,7 @@ mod tests {
         }
 
         match s3.head_bucket(&HeadBucketRequest {
-            bucket: String::from(BUCKET)
+            bucket: String::from(BUCKET),
         }) {
             Ok(_) => assert!(true),
             Err(err) => assert!(false, err),
@@ -92,7 +92,10 @@ mod tests {
                         return;
                     }
                 }
-                assert!(false, format!("FULL_CONTROL not found in bucket {}`s permission", BUCKET))
+                assert!(
+                    false,
+                    format!("FULL_CONTROL not found in bucket {}`s permission", BUCKET)
+                )
             }
             Err(err) => assert!(false, err),
         };
@@ -111,7 +114,7 @@ mod tests {
         }
 
         match s3.head_bucket(&HeadBucketRequest {
-            bucket: String::from(BUCKET)
+            bucket: String::from(BUCKET),
         }) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true),

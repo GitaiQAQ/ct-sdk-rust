@@ -39,10 +39,10 @@ use std::collections::btree_map::Entry;
 use openssl::sign::Signer;
 use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
-use rustc_serialize::base64::{STANDARD, ToBase64};
+use rustc_serialize::base64::{ToBase64, STANDARD};
 
 use url::form_urlencoded;
-use url::percent_encoding::{DEFAULT_ENCODE_SET, QUERY_ENCODE_SET, utf8_percent_encode};
+use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET, QUERY_ENCODE_SET};
 
 use aws_sdk_rust::aws::common::region::Region;
 use aws_sdk_rust::aws::common::params::Params;
@@ -72,7 +72,12 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
                 self.path = format!("/{}{}", self.bucket, self.path);
             }
         } else if !self.path.contains(&format!("/{}/", self.bucket)) {
-            self.path = format!("{}{}{}", if self.bucket.len() > 0 { "/" } else { "" }, self.bucket, self.path);
+            self.path = format!(
+                "{}{}{}",
+                if self.bucket.len() > 0 { "/" } else { "" },
+                self.bucket,
+                self.path
+            );
         } // Leave untouched if none of the above match
 
         // Signature::V2
@@ -81,8 +86,9 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
             None => build_hostname(&self.service, self.region),
         };
 
-        // Gotta remove and re-add headers since by default they append the value.  If we're following
-        // a 307 redirect we end up with Three Stooges in the headers with duplicate values.
+        // Gotta remove and re-add headers since by default they append the value.
+        // If we're following　a 307 redirect we end up with Three Stooges in the
+        // headers with duplicate values.
         self.update_header("Host", &hostname);
 
         // V2 uses GMT in long format
@@ -99,12 +105,14 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
         // NOTE: canonical_headers_v2 may should pull back /{BUCKET}/{key}
         // AWS takes BUCKET (host) and uses it for calc
 
-        let string_to_sign = format!("{}\n{}\n\n{}\n{}{}",
-                                     &self.method,
-                                     md5,
-                                     date_str,
-                                     canonical_headers_v2(&self.headers),
-                                     canonical_resources_v2(&self.bucket, &self.path, self.endpoint.is_bucket_virtual));
+        let string_to_sign = format!(
+            "{}\n{}\n\n{}\n{}{}",
+            &self.method,
+            md5,
+            date_str,
+            canonical_headers_v2(&self.headers),
+            canonical_resources_v2(&self.bucket, &self.path, self.endpoint.is_bucket_virtual)
+        );
 
         debug!("String to Sign: {}", string_to_sign);
 
@@ -159,11 +167,13 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
             _ => "".to_string(),
         };
 
-        let mut final_uri = format!("{}://{}{}{}",
-                                    self.endpoint_scheme(),
-                                    self.hostname(),
-                                    port_str,
-                                    self.path());
+        let mut final_uri = format!(
+            "{}://{}{}{}",
+            self.endpoint_scheme(),
+            self.hostname(),
+            port_str,
+            self.path()
+        );
 
         let mut hyper_headers = Headers::new();
         for h in self.headers().iter() {
@@ -174,7 +184,10 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
         let mut serializer = form_urlencoded::Serializer::new(String::new());
 
         for hyper_header in hyper_headers.iter() {
-            serializer.append_pair(hyper_header.name().as_ref(), hyper_header.value_string().as_ref());
+            serializer.append_pair(
+                hyper_header.name().as_ref(),
+                hyper_header.value_string().as_ref(),
+            );
         }
         final_uri.push_str("?");
         final_uri.push_str(serializer.finish().as_ref());
@@ -186,30 +199,27 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
 /// Used to perform client-side encryption for storing data securely in OOS. Data
 /// encryption is done using a one-time randomly generated content encryption
 /// key (CEK) per S3 object.
-///
-/// http://docs.aws.amazon.com/zh_cn/AmazonS3/latest/dev/encrypt-client-side-symmetric-master-key.html
-/// https://github.com/deg4uss3r/postio
 use std::ops::Deref;
 
 /// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
 
-pub struct CTClient
-{
+pub struct CTClient {
     p: S3Client<DefaultCredentialsProvider, Client>,
     key: Option<String>,
 }
 
-impl Deref for CTClient
-{
+impl Deref for CTClient {
     type Target = S3Client<DefaultCredentialsProvider, Client>;
     fn deref<'a>(&'a self) -> &'a S3Client<DefaultCredentialsProvider, Client> {
         &self.p
     }
 }
 
-impl CTClient
-{
-    pub fn new(credentials_provider: DefaultCredentialsProvider, securely_key: Option<String>) -> CTClient {
+impl CTClient {
+    pub fn new(
+        credentials_provider: DefaultCredentialsProvider,
+        securely_key: Option<String>,
+    ) -> CTClient {
         // Init new s3 connect
         // V4 is the default signature for AWS. However, other systems also use V2.
         let endpoint = Endpoint::new(
@@ -222,7 +232,10 @@ impl CTClient
                     None
                 }
             },
-            None, None, None);
+            None,
+            None,
+            None,
+        );
 
         CTClient {
             key: securely_key,
@@ -231,15 +244,14 @@ impl CTClient
     }
 
     /// Set the CTYun OOS Config default
-    pub fn default_ctyun_client() -> Self {
+    pub fn default_client() -> Self {
         let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
         CTClient::new(credentials_provider, None)
     }
 
     /// Set the CTYun OOS Config default
     #[allow(unused_variables)]
-    pub fn default_ctyun_securely_client() -> Self
-    {
+    pub fn default_securely_client() -> Self {
         let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
         CTClient::new(credentials_provider, Some(String::from("test231")))
     }
@@ -301,25 +313,19 @@ fn byte_serialize(input: &str) -> String {
 fn build_hostname(service: &str, region: Region) -> String {
     // iam has only 1 endpoint, other services have region-based endpoints
     match service {
-        "iam" => {
-            match region {
-                Region::CnNorth1 => format!("{}.{}.amazonaws.com.cn", service, region),
-                _ => format!("{}.amazonaws.com", service),
-            }
-        }
-        "s3" => {
-            match region {
-                Region::UsEast1 => "s3.amazonaws.com".to_string(),
-                Region::CnNorth1 => format!("s3.{}.amazonaws.com.cn", region),
-                _ => format!("s3-{}.amazonaws.com", region),
-            }
-        }
-        _ => {
-            match region {
-                Region::CnNorth1 => format!("{}.{}.amazonaws.com.cn", service, region),
-                _ => format!("{}.{}.amazonaws.com", service, region),
-            }
-        }
+        "iam" => match region {
+            Region::CnNorth1 => format!("{}.{}.amazonaws.com.cn", service, region),
+            _ => format!("{}.amazonaws.com", service),
+        },
+        "s3" => match region {
+            Region::UsEast1 => "s3.amazonaws.com".to_string(),
+            Region::CnNorth1 => format!("s3.{}.amazonaws.com.cn", region),
+            _ => format!("s3-{}.amazonaws.com", region),
+        },
+        _ => match region {
+            Region::CnNorth1 => format!("{}.{}.amazonaws.com.cn", service, region),
+            _ => format!("{}.{}.amazonaws.com", service, region),
+        },
     }
 }
 // Common to V2 and V4 - End
@@ -336,10 +342,13 @@ fn canonical_headers_v2(headers: &BTreeMap<String, Vec<Vec<u8>>>) -> String {
         } else {
             match item.0.to_ascii_lowercase().find("x-amz-") {
                 None => {}
-                _ => canonical.push_str(format!("{}:{}\n",
-                                                item.0.to_ascii_lowercase(),
-                                                canonical_values(item.1))
-                    .as_ref()),
+                _ => canonical.push_str(
+                    format!(
+                        "{}:{}\n",
+                        item.0.to_ascii_lowercase(),
+                        canonical_values(item.1)
+                    ).as_ref(),
+                ),
             };
         }
     }
@@ -356,13 +365,14 @@ fn canonical_resources_v2(bucket: &str, path: &str, is_bucket_virtual: bool) -> 
             "" => {
                 match path {
                     "" => "/".to_string(),
-                    _ => encode_uri(path),  // This assumes / as leading char
+                    _ => encode_uri(path), // This assumes / as leading char
                 }
             }
             _ => {
                 match path {
                     "" => format!("/{}/", bucket),
-                    _ => encode_uri(&format!("/{}{}", bucket, path)),  // This assumes path with leading / char
+                    _ => encode_uri(&format!("/{}{}", bucket, path)),
+                    // This assumes path with leading / char
                 }
             }
         }

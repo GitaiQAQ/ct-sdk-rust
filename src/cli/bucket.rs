@@ -29,10 +29,13 @@ use prettytable::row::Row;
 use prettytable::cell::Cell;
 use prettytable::format::FormatBuilder;
 
+use clap::ArgMatches;
+
 /// List buckets(ls)
-pub fn list(ct: &CTClient) {
+pub fn list(args: &ArgMatches) {
     debug!("List Bucket");
-    match ct.list_buckets() {
+
+    match CTClient::default_securely_client().list_buckets() {
         Ok(out) => printstd!(out.buckets, name, creation_date),
         Err(err) => print_aws_err!(err),
     }
@@ -40,9 +43,11 @@ pub fn list(ct: &CTClient) {
 
 /// 创建一个 Bucket
 /// Creates an BUCKET(mb)
-pub fn create(ct: &CTClient, name: String) {
+pub fn create(args: &ArgMatches) {
     debug!("Create Bucket");
-    match ct.create_bucket(&CreateBucketRequest {
+    let bucket = args.value_of("bucket").unwrap();
+
+    match CTClient::default_securely_client().create_bucket(&CreateBucketRequest {
         bucket: name.clone(),
         ..Default::default()
     }) {
@@ -52,9 +57,12 @@ pub fn create(ct: &CTClient, name: String) {
 }
 
 // TODO: 更改创建的 Bucket属性（私有、公有、只读）
-pub fn acl(ct: &CTClient, name: String, acl: CannedAcl) {
+pub fn acl(args: &ArgMatches) {
     debug!("acl");
-    match ct.put_bucket_acl(&PutBucketAclRequest {
+    let bucket = args.value_of("bucket").unwrap();
+    let acl = args.value_of("acl").unwrap();
+
+    match CTClient::default_securely_client().put_bucket_acl(&PutBucketAclRequest {
         bucket: name.clone(),
         acl: Some(acl),
         ..Default::default()
@@ -69,9 +77,11 @@ pub fn acl(ct: &CTClient, name: String, acl: CannedAcl) {
 /// A BUCKET must be completely empty of objects and versioned objects before it can be deleted.
 /// However, the --force parameter can be used to delete the non-versioned objects in the BUCKET
 /// before the BUCKET is deleted.
-pub fn delete(ct: &CTClient, name: String) {
+pub fn delete(args: &ArgMatches) {
     debug!("Delete Bucket");
-    match ct.delete_bucket(&DeleteBucketRequest {
+    let bucket = args.value_of("bucket").unwrap();
+
+    match CTClient::default_securely_client().delete_bucket(&DeleteBucketRequest {
         bucket: name.clone(),
         ..Default::default()
     }) {

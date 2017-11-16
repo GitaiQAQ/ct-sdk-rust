@@ -22,7 +22,7 @@
 //! Additional API for Object Operations
 //!
 use md5;
-use rustc_serialize::base64::{STANDARD, ToBase64};
+use rustc_serialize::base64::{ToBase64, STANDARD};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
 pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
@@ -51,21 +51,19 @@ pub trait CTClientObject {
     ///     Err(err) => println!("{:#?}", err),
     /// }
     /// ```
-    fn presigned_object(&self, input: &PresignedObjectRequest)
-                        -> Result<String, S3Error>;
+    fn presigned_object(&self, input: &PresignedObjectRequest) -> Result<String, S3Error>;
 }
 
-impl CTClientObject for CTClient
-{
-    fn presigned_object(&self, input: &PresignedObjectRequest)
-                        -> Result<String, S3Error>
-    {
-        let mut request = SignedRequest::new("GET",
-                                             "s3",
-                                             self.region(),
-                                             &input.bucket,
-                                             &format!("/{}", input.key),
-                                             self.endpoint());
+impl CTClientObject for CTClient {
+    fn presigned_object(&self, input: &PresignedObjectRequest) -> Result<String, S3Error> {
+        let mut request = SignedRequest::new(
+            "GET",
+            "s3",
+            self.region(),
+            &input.bucket,
+            &format!("/{}", input.key),
+            self.endpoint(),
+        );
 
         // TODO: new PR for make the methor public
         let hostname = self.hostname(Some(&input.bucket));
@@ -74,7 +72,8 @@ impl CTClientObject for CTClient
 
         let (date, signature) = request.presigned(
             &self.credentials_provider().credentials().unwrap(),
-            &input.expires);
+            &input.expires,
+        );
 
         request.remove_header("authorization");
         request.remove_header("content-length");
@@ -86,7 +85,13 @@ impl CTClientObject for CTClient
 
         request.add_header_raw("Signature", signature.as_ref());
         request.add_header_raw("Expires", date.as_ref());
-        request.add_header_raw("AWSAccessKeyId", &self.credentials_provider().credentials().unwrap().aws_access_key_id());
+        request.add_header_raw(
+            "AWSAccessKeyId",
+            &self.credentials_provider()
+                .credentials()
+                .unwrap()
+                .aws_access_key_id(),
+        );
 
 
         let url = request.gen_url();
@@ -100,38 +105,40 @@ use aws_sdk_rust::aws::common::common::Operation;
 
 //#[derive(Debug, Default)]
 #[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
-pub struct PostObjectRequest {
-
-}
+pub struct PostObjectRequest {}
 
 //#[derive(Debug, Default)]
 #[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
-pub struct PostObjectOutput {
-
-}
+pub struct PostObjectOutput {}
 
 pub trait CTClientEncryptionObject {
-    fn put_object_securely(&self, input: PutObjectRequest, operation: Option<&mut Operation>)
-                           -> Result<PutObjectOutput, S3Error>;
+    fn put_object_securely(
+        &self,
+        input: PutObjectRequest,
+        operation: Option<&mut Operation>,
+    ) -> Result<PutObjectOutput, S3Error>;
 
-    fn get_object_securely(&self, input: &GetObjectRequest, operation: Option<&mut Operation>)
-                           -> Result<GetObjectOutput, S3Error>;
+    fn get_object_securely(
+        &self,
+        input: &GetObjectRequest,
+        operation: Option<&mut Operation>,
+    ) -> Result<GetObjectOutput, S3Error>;
 
-    fn post_object(&self, input: &PostObjectRequest)
-                   -> Result<PostObjectOutput, S3Error>;
+    fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error>;
 }
 
-impl CTClientEncryptionObject for CTClient
-{
-    fn put_object_securely(&self, input: PutObjectRequest, operation: Option<&mut Operation>)
-                           -> Result<PutObjectOutput, S3Error>
-    {
+impl CTClientEncryptionObject for CTClient {
+    fn put_object_securely(
+        &self,
+        input: PutObjectRequest,
+        operation: Option<&mut Operation>,
+    ) -> Result<PutObjectOutput, S3Error> {
         // let mut request = PutObjectRequest::from(*input);
         // input.metadata.unwrap().len() as usize
         let mut cipherbody = vec![0u8; 4096];
         {
             let plaintext = input.body.unwrap();
-            cipherbody = vec![0u8; plaintext.len() + (16 - plaintext.len()%16)];
+            cipherbody = vec![0u8; plaintext.len() + (16 - plaintext.len() % 16)];
             encrypt(&plaintext, &mut cipherbody);
             //let mut plain_out: Vec<u8> = repeat(0).take(plaintext.len()).collect();
             //decrypt(&cipherbody, &mut plain_out);
@@ -148,9 +155,11 @@ impl CTClientEncryptionObject for CTClient
         self.put_object(&request, operation)
     }
 
-    fn get_object_securely(&self, input: &GetObjectRequest, operation: Option<&mut Operation>)
-                            -> Result<GetObjectOutput, S3Error>
-    {
+    fn get_object_securely(
+        &self,
+        input: &GetObjectRequest,
+        operation: Option<&mut Operation>,
+    ) -> Result<GetObjectOutput, S3Error> {
         match self.get_object(input, operation) {
             Ok(out) => {
                 let mut output = GetObjectOutput::from(out);
@@ -175,22 +184,12 @@ impl CTClientEncryptionObject for CTClient
         }
     }
 
-    fn post_object(&self, input: &PostObjectRequest)
-        -> Result<PostObjectOutput, S3Error> {
+    fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error> {
         unimplemented!()
     }
 }
 
 // use openssl::rsa::Rsa;
-
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::path::Path;
-use std::io::Read;
-use std::io::Write;
-
-use crypto::buffer::WriteBuffer;
-use crypto::buffer::ReadBuffer;
 
 use crypto::*;
 use crypto::buffer::*;
@@ -200,41 +199,40 @@ use std::iter::repeat;
 pub const BUFFER_SIZE: usize = 4096;
 
 fn encrypt(plaintext: &[u8], ciphertext: &mut [u8]) {
-    let key:Vec<u8> = repeat(1).take(16).collect();
-    let iv:Vec<u8> = repeat(3).take(16).collect();
+    let key: Vec<u8> = repeat(1).take(16).collect();
+    let iv: Vec<u8> = repeat(3).take(16).collect();
 
     let mut encryptor = aes::cbc_encryptor(
         aes::KeySize::KeySize256,
         &key[..],
         &iv.clone(),
-        blockmodes::PkcsPadding);
+        blockmodes::PkcsPadding,
+    );
 
     {
         let mut buff_in = RefReadBuffer::new(&plaintext);
         let mut buff_out = RefWriteBuffer::new(ciphertext);
 
-        let result = encryptor.encrypt(
-            &mut buff_in,
-            &mut buff_out,
-            true);
+        let result = encryptor.encrypt(&mut buff_in, &mut buff_out, true);
 
         match result {
             Ok(_buffer_underflow) => {}
-            Err(err) => panic!("Error {:?}", err)
+            Err(err) => panic!("Error {:?}", err),
         }
     }
 }
 
 
 fn decrypt(ciphertext: &[u8], plaintext: &mut [u8]) {
-    let key:Vec<u8> = repeat(1).take(16).collect();
-    let iv:Vec<u8> = repeat(3).take(16).collect();
+    let key: Vec<u8> = repeat(1).take(16).collect();
+    let iv: Vec<u8> = repeat(3).take(16).collect();
 
     let mut decryptor = aes::cbc_decryptor(
         aes::KeySize::KeySize256,
         &key[..],
         &iv.clone(),
-        blockmodes::PkcsPadding);
+        blockmodes::PkcsPadding,
+    );
 
     {
         let mut buff_in = RefReadBuffer::new(&ciphertext);
@@ -242,7 +240,7 @@ fn decrypt(ciphertext: &[u8], plaintext: &mut [u8]) {
 
         match decryptor.decrypt(&mut buff_in, &mut buff_out, true) {
             Ok(_buffer_underflow) => {}
-            Err(err) => panic!("Error {:?}", err)
+            Err(err) => panic!("Error {:?}", err),
         }
     }
 }

@@ -21,7 +21,9 @@
 
 macro_rules! titles {
     ($table:expr, $( $title:expr ), *) => {
-        $table.set_titles(Row::new(vec![ $( Cell::new(stringify!($title).to_uppercase().as_ref()) ),* ]));
+        $table.set_titles(
+            Row::new(vec![ $(
+                Cell::new(stringify!($title).to_uppercase().as_ref()) ),* ]));
     };
 }
 

@@ -19,7 +19,6 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 pub mod sdk;
 pub mod bucket;
 pub mod object;
@@ -27,4 +26,3 @@ pub mod iam;
 
 pub use aws_sdk_rust::aws::*;
 pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
-

@@ -34,29 +34,28 @@
 //! * IAM Role
 //! ## Object Operations
 
-// NOTE: See the src/main.rs for more examples...
 #[macro_use]
 extern crate clap;
+extern crate ct_sdk;
+extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate md5;
-extern crate env_logger;
-extern crate ct_sdk;
 extern crate prettytable;
 extern crate rustc_serialize;
 
 use clap::ArgMatches;
 
 mod cli;
-// use cli::S3Client;
 use cli::CTClient;
 
 // http://oos-bj2.ctyunapi.cn
 #[allow(unused_variables)]
 fn main() {
     env_logger::init().unwrap();
-    debug!("ct-cli start...");
-    /*let _matches: ArgMatches = clap_app!(myapp =>
+    debug!("Application START");
+    debug!("ArgMatches init start");
+    let matches: ArgMatches = clap_app!(myapp =>
         (version: "0.1")
         (author: "Gitai<i@gitai.me>")
         (about: "Does awesome things")
@@ -115,13 +114,43 @@ fn main() {
         )
         (@arg aws_access_key_id: -a --ak +takes_value "AK/AWS Access Key Id")
         (@arg aws_secret_access_key: -s --sk +takes_value "SK/AWS Secret Access Key")
-    ).get_matches();*/
+    ).get_matches();
+    debug!("ArgMatches init end");
 
-    debug!("OOS connecting.");
+    match matches.subcommand() {
+        ("bucket", Some(matches)) => {
+            use cli::bucket::*;
+            match matches.subcommand() {
+                ("new", Some(matches)) => {}
+                ("rm", Some(matches)) => {}
+                ("ls", Some(matches)) => {}
+                _ => {}
+            }
+        }
+        ("object", Some(matches)) => {
+            use cli::object::*;
+            match matches.subcommand() {
+                ("put", Some(matches)) => {}
+                ("get", Some(matches)) => {}
+                ("down", Some(matches)) => {}
+                ("rm", Some(matches)) => {}
+                ("share", Some(matches)) => {}
+                _ => {}
+            }
+        }
+        ("iam", Some(matches)) => {
+            use cli::iam::*;
+            match matches.subcommand() {
+                ("new", Some(matches)) => {}
+                ("rm", Some(matches)) => {}
+                ("ls", Some(matches)) => {}
+                ("set", Some(matches)) => {}
+                _ => {}
+            }
+        }
+        _ => {}
+    }
 
-
-
-    debug!("OOS connected.");
     {
         // use cli::object::CTCLIObject;
         // s3.share(String::from("gitai"), String::from("date.txt"), None);
@@ -156,12 +185,12 @@ fn main() {
                 Path::new("/home/gitai/project/stanford-cpp-library/autograder"),
                 None);
         });*/
-        use std::path::Path;
+        /*use std::path::Path;
         use cli::object::put_thread;
         put_thread(String::from("testqaq"),
             String::from(""),
             Path::new("/home/gitai/project/stanford-cpp-library/autograder"),
-            None);
+            None);*/
     }
 
     {
@@ -192,7 +221,5 @@ fn main() {
         // s3.delete(String::from("d72e05685a5e7d7b0eb7"));
         // s3.update(String::from("2aa302a2e7182784409e"));
     }
-    debug!("end");
+    debug!("END");
 }
-
-

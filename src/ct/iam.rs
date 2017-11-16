@@ -23,7 +23,7 @@
 //!
 use std::str;
 use std::str::FromStr;
-use std::fmt::{Display, Formatter, Error};
+use std::fmt::{Display, Error, Formatter};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
 use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
@@ -55,7 +55,7 @@ impl Display for Status {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
             &Status::Active => write!(f, "active"),
-            _ => write!(f, "inactive")
+            _ => write!(f, "inactive"),
         }
     }
 }
@@ -102,7 +102,10 @@ pub struct ListAccessKeyOutput {
 pub struct StringParser;
 
 impl StringParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<AccessKeyId, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<AccessKeyId, XmlParseError> {
         try!(start_element(tag_name, stack));
         let obj = try!(characters(stack));
         try!(end_element(tag_name, stack));
@@ -114,7 +117,10 @@ impl StringParser {
 pub struct BoolParser;
 
 impl BoolParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<IsPrimary, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<IsPrimary, XmlParseError> {
         try!(start_element(tag_name, stack));
 
         let mut obj = IsPrimary::default();
@@ -154,7 +160,10 @@ pub struct AccessKeyMetadataParser;
 pub struct ListAccessKeyOutputParser;
 
 impl StatusParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<Status, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<Status, XmlParseError> {
         try!(start_element(tag_name, stack));
         let obj = try!(characters(stack));
         try!(end_element(tag_name, stack));
@@ -167,7 +176,10 @@ impl StatusParser {
 }
 
 impl AccessKeyMetadataParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<AccessKeyMetadata, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<AccessKeyMetadata, XmlParseError> {
         try!(start_element(tag_name, stack));
         let mut obj = AccessKeyMetadata::default();
         loop {
@@ -197,21 +209,25 @@ impl AccessKeyMetadataParser {
 }
 
 impl AccessKeyMetadataListParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<AccessKeyMetadataList, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<AccessKeyMetadataList, XmlParseError> {
         let mut obj = Vec::new();
 
         while try!(peek_at_name(stack)) == tag_name {
             obj.push(try!(AccessKeyMetadataParser::parse_xml(tag_name, stack)));
         }
 
-        Ok(AccessKeyMetadataList {
-            member: obj,
-        })
+        Ok(AccessKeyMetadataList { member: obj })
     }
 }
 
 impl ListAccessKeyOutputParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<ListAccessKeyOutput, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<ListAccessKeyOutput, XmlParseError> {
         try!(start_element(tag_name, stack));
         let mut obj = ListAccessKeyOutput::default();
         loop {
@@ -222,7 +238,8 @@ impl ListAccessKeyOutputParser {
             }
             if current_name == "AccessKeyMetadata" {
                 stack.next(); // skip AccessKeyMetadata start and go to contents
-                obj.access_key_metadata = try!(AccessKeyMetadataListParser::parse_xml("member", stack));
+                obj.access_key_metadata =
+                    try!(AccessKeyMetadataListParser::parse_xml("member", stack));
                 stack.next();
                 continue;
             }
@@ -257,7 +274,10 @@ pub struct CreateAccessKeyOutput {
 pub struct CreateAccessKeyOutputParser;
 
 impl CreateAccessKeyOutputParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<CreateAccessKeyOutput, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<CreateAccessKeyOutput, XmlParseError> {
         try!(start_element(tag_name, stack));
         let mut obj = CreateAccessKeyOutput::default();
         stack.next(); // skip AccessKey start and go to contents
@@ -272,7 +292,8 @@ impl CreateAccessKeyOutputParser {
                 continue;
             }
             if current_name == "SecretAccessKey" {
-                obj.secret_access_key = try!(SecretAccessKeyParser::parse_xml("SecretAccessKey", stack));
+                obj.secret_access_key =
+                    try!(SecretAccessKeyParser::parse_xml("SecretAccessKey", stack));
                 continue;
             }
             if current_name == "Status" {
@@ -307,7 +328,10 @@ pub struct DeleteAccessKeyOutput {
 pub struct DeleteAccessKeyOutputParser;
 
 impl DeleteAccessKeyOutputParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<DeleteAccessKeyOutput, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<DeleteAccessKeyOutput, XmlParseError> {
         try!(start_element(tag_name, stack));
         let mut obj = DeleteAccessKeyOutput::default();
         loop {
@@ -342,7 +366,10 @@ pub struct UpdateAccessKeyOutput {
 pub struct UpdateAccessKeyOutputParser;
 
 impl UpdateAccessKeyOutputParser {
-    pub fn parse_xml<T: Peek + Next>(tag_name: &str, stack: &mut T) -> Result<UpdateAccessKeyOutput, XmlParseError> {
+    pub fn parse_xml<T: Peek + Next>(
+        tag_name: &str,
+        stack: &mut T,
+    ) -> Result<UpdateAccessKeyOutput, XmlParseError> {
         try!(start_element(tag_name, stack));
         let mut obj = UpdateAccessKeyOutput::default();
         loop {
@@ -361,28 +388,26 @@ impl UpdateAccessKeyOutputParser {
 
 pub trait CTClientIAM {
     fn list_access_key(&self, input: &ListAccessKeyRequest)
-                       -> Result<ListAccessKeyOutput, S3Error>;
-    fn create_access_key(&self)
-                         -> Result<CreateAccessKeyOutput, S3Error>;
-    fn delete_access_key(&self, input: &DeleteAccessKeyRequest)
-                         -> Result<DeleteAccessKeyOutput, S3Error>;
-    fn update_access_key(&self, input: &UpdateAccessKeyRequest)
-                         -> Result<UpdateAccessKeyOutput, S3Error>;
+        -> Result<ListAccessKeyOutput, S3Error>;
+    fn create_access_key(&self) -> Result<CreateAccessKeyOutput, S3Error>;
+    fn delete_access_key(
+        &self,
+        input: &DeleteAccessKeyRequest,
+    ) -> Result<DeleteAccessKeyOutput, S3Error>;
+    fn update_access_key(
+        &self,
+        input: &UpdateAccessKeyRequest,
+    ) -> Result<UpdateAccessKeyOutput, S3Error>;
 }
 
-impl CTClientIAM for CTClient
-{
-    fn list_access_key(&self, input: &ListAccessKeyRequest)
-                       -> Result<ListAccessKeyOutput, S3Error> {
+impl CTClientIAM for CTClient {
+    fn list_access_key(
+        &self,
+        input: &ListAccessKeyRequest,
+    ) -> Result<ListAccessKeyOutput, S3Error> {
         let input = input.clone();
         let payload: Vec<u8>;
-        let mut request = SignedRequest::new(
-            "POST",
-            "s3",
-            self.region(),
-            "",
-            "/",
-            self.endpoint());
+        let mut request = SignedRequest::new("POST", "s3", self.region(), "", "/", self.endpoint());
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
@@ -396,16 +421,20 @@ impl CTClientIAM for CTClient
             _ => "".to_string(),
         };
 
-        let body = format!("Action=ListAccessKey&MaxItems={}&Marker={}",
-                           &max_items,
-                           &marker);
+        let body = format!(
+            "Action=ListAccessKey&MaxItems={}&Marker={}",
+            &max_items,
+            &marker
+        );
 
         payload = body.into_bytes();
         request.set_payload(Some(&payload));
 
-        let result = sign_and_execute(&self.dispatcher,
-                                      &mut request,
-                                      try!(self.credentials_provider.credentials()));
+        let result = sign_and_execute(
+            &self.dispatcher,
+            &mut request,
+            try!(self.credentials_provider.credentials()),
+        );
 
         let status = result.status;
         let reader = EventReader::from_str(&result.body);
@@ -416,7 +445,10 @@ impl CTClientIAM for CTClient
         match status {
             200 => {
                 stack.next(); // ListAccessKeysResponse
-                Ok(try!(ListAccessKeyOutputParser::parse_xml("ListAccessKeysResult", &mut stack)))
+                Ok(try!(ListAccessKeyOutputParser::parse_xml(
+                    "ListAccessKeysResult",
+                    &mut stack
+                )))
             }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
@@ -426,25 +458,19 @@ impl CTClientIAM for CTClient
     }
 
     /// 创建一组 AK/SK
-    fn create_access_key(&self)
-                         -> Result<CreateAccessKeyOutput, S3Error>
-    {
-        let mut request = SignedRequest::new(
-            "POST",
-            "s3",
-            self.region(),
-            "",
-            "/",
-            self.endpoint());
+    fn create_access_key(&self) -> Result<CreateAccessKeyOutput, S3Error> {
+        let mut request = SignedRequest::new("POST", "s3", self.region(), "", "/", self.endpoint());
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
         request.set_payload(Some("Action=CreateAccessKey".as_bytes()));
         // request.add_param("MaxItems", "10");
 
-        let result = sign_and_execute(&self.dispatcher,
-                                      &mut request,
-                                      try!(self.credentials_provider.credentials()));
+        let result = sign_and_execute(
+            &self.dispatcher,
+            &mut request,
+            try!(self.credentials_provider.credentials()),
+        );
 
         let status = result.status;
         let reader = EventReader::from_str(&result.body);
@@ -455,7 +481,10 @@ impl CTClientIAM for CTClient
         match status {
             200 => {
                 stack.next(); // CreateAccessKeyResponse
-                Ok(try!(CreateAccessKeyOutputParser::parse_xml("CreateAccessKeyResult", &mut stack)))
+                Ok(try!(CreateAccessKeyOutputParser::parse_xml(
+                    "CreateAccessKeyResult",
+                    &mut stack
+                )))
             }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
@@ -465,27 +494,27 @@ impl CTClientIAM for CTClient
     }
 
     /// 删除已有的 AK/SK
-    fn delete_access_key(&self, input: &DeleteAccessKeyRequest)
-                         -> Result<DeleteAccessKeyOutput, S3Error>
-    {
+    fn delete_access_key(
+        &self,
+        input: &DeleteAccessKeyRequest,
+    ) -> Result<DeleteAccessKeyOutput, S3Error> {
         let payload: Vec<u8>;
-        let mut request = SignedRequest::new(
-            "POST",
-            "s3",
-            self.region(),
-            "",
-            "/",
-            self.endpoint());
+        let mut request = SignedRequest::new("POST", "s3", self.region(), "", "/", self.endpoint());
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
-        let body = format!("Action=DeleteAccessKey&AccessKeyId={}", &input.access_key_id);
+        let body = format!(
+            "Action=DeleteAccessKey&AccessKeyId={}",
+            &input.access_key_id
+        );
         payload = body.into_bytes();
         request.set_payload(Some(&payload));
 
-        let result = sign_and_execute(&self.dispatcher,
-                                      &mut request,
-                                      try!(self.credentials_provider.credentials()));
+        let result = sign_and_execute(
+            &self.dispatcher,
+            &mut request,
+            try!(self.credentials_provider.credentials()),
+        );
 
         let status = result.status;
         let reader = EventReader::from_str(&result.body);
@@ -496,7 +525,10 @@ impl CTClientIAM for CTClient
         match status {
             200 => {
                 stack.next(); // DeleteAccessKeyResponse
-                Ok(try!(DeleteAccessKeyOutputParser::parse_xml("ResponseMetadata", &mut stack)))
+                Ok(try!(DeleteAccessKeyOutputParser::parse_xml(
+                    "ResponseMetadata",
+                    &mut stack
+                )))
             }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
@@ -506,31 +538,30 @@ impl CTClientIAM for CTClient
     }
 
     /// 更改 AK/SK属性（主秘钥/普通秘钥）
-    fn update_access_key(&self, input: &UpdateAccessKeyRequest)
-                         -> Result<UpdateAccessKeyOutput, S3Error>
-    {
+    fn update_access_key(
+        &self,
+        input: &UpdateAccessKeyRequest,
+    ) -> Result<UpdateAccessKeyOutput, S3Error> {
         let payload: Vec<u8>;
-        let mut request = SignedRequest::new(
-            "POST",
-            "s3",
-            self.region(),
-            "",
-            "/",
-            self.endpoint());
+        let mut request = SignedRequest::new("POST", "s3", self.region(), "", "/", self.endpoint());
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
-        let body = format!("Action=UpdateAccessKey&AccessKeyId={}&Status={}&IsPrimary={}",
-                           &input.access_key_id,
-                           &input.status,
-                           &input.is_primary);
+        let body = format!(
+            "Action=UpdateAccessKey&AccessKeyId={}&Status={}&IsPrimary={}",
+            &input.access_key_id,
+            &input.status,
+            &input.is_primary
+        );
 
         payload = body.into_bytes();
         request.set_payload(Some(&payload));
 
-        let result = sign_and_execute(&self.dispatcher,
-                                      &mut request,
-                                      try!(self.credentials_provider.credentials()));
+        let result = sign_and_execute(
+            &self.dispatcher,
+            &mut request,
+            try!(self.credentials_provider.credentials()),
+        );
 
 
         let status = result.status;
@@ -574,7 +605,7 @@ mod tests {
         match s3.list_access_key(&ListAccessKeyRequest {
             ..Default::default()
         }) {
-            Ok(out) => { println!("{:?}", out) }
+            Ok(out) => println!("{:?}", out),
             Err(err) => println!("{:?}", err),
         }
     }

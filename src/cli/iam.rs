@@ -27,41 +27,60 @@ use prettytable::row::Row;
 use prettytable::cell::Cell;
 use prettytable::format::FormatBuilder;
 
-pub fn list(ct: &CTClient) {
-    match ct.list_access_key(&ListAccessKeyRequest {
+use clap::ArgMatches;
+
+pub fn list(args: &ArgMatches) {
+    debug!("List AccessKey");
+    match CTClient::default_securely_client().list_access_key(&ListAccessKeyRequest {
         ..Default::default()
     }) {
-        Ok(out) => printstd!(out.access_key_metadata.member, user_name, access_key_id, status, is_primary),
+        Ok(out) => printstd!(
+            out.access_key_metadata.member,
+            user_name,
+            access_key_id,
+            status,
+            is_primary
+        ),
         Err(err) => println!("{:?}", err),
     }
 }
 
 /// 创建一组 AK/SK
-pub fn create(ct: &CTClient) {
-    match ct.create_access_key() {
-        Ok(out) => { println!("{:?}", out) }
+pub fn create(args: &ArgMatches) {
+    debug!("Create Access Key");
+
+    match CTClient::default_securely_client().create_access_key() {
+        Ok(out) => println!("{:?}", out),
         Err(err) => println!("{:?}", err),
     }
 }
 
 /// 删除已有的 AK/SK
-pub fn delete(ct: &CTClient, access_key_id: String) {
-    match ct.delete_access_key(&DeleteAccessKeyRequest {
-        access_key_id,
-    }) {
-        Ok(out) => { println!("{:?}", out) }
+pub fn delete(args: &ArgMatches) {
+    debug!("Delete Access Key");
+
+    let access_key_id = args.value_of("ak").unwrap();
+
+    match CTClient::default_securely_client().delete_access_key(&DeleteAccessKeyRequest { access_key_id }) {
+        Ok(out) => println!("{:?}", out),
         Err(err) => println!("{:?}", err),
     }
 }
 
 /// 更改 AK/SK属性（主秘钥/普通秘钥）
-pub fn update(ct: &CTClient, access_key_id: String) {
-    match ct.update_access_key(&UpdateAccessKeyRequest {
+pub fn update(args: &ArgMatches) {
+    debug!("Update Access Key");
+
+    let access_key_id = args.value_of("ak").unwrap();
+    let status = args.value_of("status").unwrap();
+    let is_primary = args.value_of("is_primary").unwrap();
+
+    match CTClient::default_securely_client().update_access_key(&UpdateAccessKeyRequest {
         access_key_id,
         status: Status::Inactive,
         is_primary: true,
     }) {
-        Ok(out) => { println!("{:?}", out) }
+        Ok(out) => println!("{:?}", out),
         Err(err) => println!("{:?}", err),
     }
 }
