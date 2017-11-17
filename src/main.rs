@@ -36,6 +36,7 @@
 
 #[macro_use]
 extern crate clap;
+extern crate colored;
 extern crate ct_sdk;
 extern crate env_logger;
 #[macro_use]
@@ -44,107 +45,150 @@ extern crate md5;
 extern crate prettytable;
 extern crate rustc_serialize;
 
+use std::env;
 use clap::ArgMatches;
 
 mod cli;
-use cli::CTClient;
 
 // http://oos-bj2.ctyunapi.cn
 #[allow(unused_variables)]
 fn main() {
-    env_logger::init().unwrap();
-    debug!("Application START");
-    debug!("ArgMatches init start");
     let matches: ArgMatches = clap_app!(myapp =>
         (version: "0.1")
         (author: "Gitai<i@gitai.me>")
         (about: "Does awesome things")
-        (@subcommand config =>
+        (@subcommand account =>
             (about: "Write AK/SK to disk(~/.aws/credentials)")
             (@arg aws_access_key_id: +required -a --ak +takes_value "AK/AWS Access Key Id")
             (@arg aws_secret_access_key: +required -s --sk +takes_value "SK/AWS Secret Access Key")
         )
         (@subcommand bucket =>
+            (about: "管理仓库")
             (@subcommand ls =>
-                (about: "List buckets")
-                (@arg quiet: -q --quiet "Only display Names")
+                (about: "列出全部储存仓库")
+                (@arg quiet: -q --quiet "精简模式，只显示仓库唯一 ID")
             )
             (@subcommand new =>
-                (about: "Create a BUCKET")
-                (@arg name: +required +takes_value "Bucket while be create")
+                (about: "新建空储存仓库")
+                (@arg bucket_name: +required +takes_value)
             )
             (@subcommand rm =>
-                (about: "Delete BUCKET")
-                (@arg name: +required +takes_value "Bucket while be delete")
+                (about: "删除空储存仓库")
+                (@arg buckets: +required +multiple +takes_value "仓库名称")
+                //(@arg force: -f --force "强制删除非空仓库")
+            )
+            (@subcommand set =>
+                (about: "更改仓库属性（私有、公有、只读）")
+                (@arg bucket_name: +required +takes_value)
+                (@arg read: -r --read +takes_value "公开读取")
+                (@arg write: -w --write +takes_value "公开写入")
             )
         )
         (@subcommand object =>
+            (about: "管理对象")
+            (@arg bucket_name: +required +takes_value "储存仓库")
             (@subcommand ls =>
-                (about: "List objects")
-                (@arg bucket: +required +takes_value "Where")
-                (@arg quiet: -q --quiet "Only display Names")
+                (about: "列出全部储存对象")
+                (@arg prefix: +takes_value "过滤前缀")
+                (@arg quiet: -q --quiet "精简模式，只显示对象唯一 ID")
             )
-            (@subcommand new =>
-                (about: "Create a objects")
-                (@arg bucket: +required +takes_value "Object while be create")
-                (@arg key: +required +takes_value "Path")
-                (@arg body: +required +multiple +takes_value "Body")
+            /*(@subcommand new =>
+                (about: "从内容新建储存对象")
+                (@arg bucket_name: +required +takes_value "储存仓库")
+                (@arg key: +required +takes_value "对象唯一 ID")
+                (@arg body: +required +multiple +takes_value "内容")
+            )*/
+            (@subcommand up =>
+                (about: "上传对象")
+                (@arg keys: +required +multiple +takes_value "对象 ID 列表")
+                (@arg multithread: -m --multithread "多线程上传")
+                (@arg reverse: -r --reverse "递归子目录")
+                (@arg prefix: -p --prefix "前缀")
             )
-            (@subcommand put =>
-                (about: "Put a objects")
-                (@arg bucket: +required +takes_value "Object while be create")
-                (@arg keys: +required +multiple +takes_value "Key")
-            )
-            (@subcommand get =>
-                (about: "Get object")
-                (@arg bucket: +required +takes_value "Object while be delete")
-                (@arg keys: +required +multiple +takes_value "Key")
+            /*(@subcommand get =>
+                (about: "读取对象")
+                (@arg bucket_name: +required +takes_value "储存仓库")
+                (@arg key: +required +takes_value "对象唯一 ID")
+            )*/
+            (@subcommand down =>
+                (about: "下载对象")
+                (@arg keys: +required +multiple +takes_value "对象 ID 列表")
+                (@arg dir: -o --output +takes_value "储存文件夹")
             )
             (@subcommand rm =>
-                (about: "Delete objects")
-                (@arg bucket: +required +takes_value "Object while be delete")
-                (@arg keys: +required +multiple +takes_value "Key")
+                (about: "删除对象")
+                (@arg keys: +required +multiple +takes_value "对象 ID 列表")
             )
             (@subcommand share =>
-                (about: "Share object")
-                (@arg bucket: +required +takes_value "Object while be delete")
-                (@arg key: +required +takes_value "Key")
-                (@arg expires: -e --expires +takes_value "Expires")
+                (about: "分享对象")
+                (@arg key: +required +takes_value "对象唯一 ID")
+                (@arg expires: -e --expires +takes_value "时间（1500s）")
+            )
+        )
+        (@subcommand iam =>
+            (@subcommand ls =>
+                (about: "列出全部 AK/SK")
+                (@arg quiet: -q --quiet "精简模式，只显示 AK")
+            )
+            (@subcommand new =>
+                (about: "新建 AK/SK")
+            )
+            (@subcommand rm =>
+                (about: "删除 AK/SK")
+                (@arg access_key_id: --ak +required +takes_value)
+            )
+            (@subcommand set =>
+                (about: "更改 AK/SK 属性")
+                (@arg access_key_id: --ak +required +takes_value)
+                (@arg status: -s --status "生效/禁用")
+                (@arg is_primary: -p --isprimary "主秘钥/普通秘钥")
             )
         )
         (@arg aws_access_key_id: -a --ak +takes_value "AK/AWS Access Key Id")
         (@arg aws_secret_access_key: -s --sk +takes_value "SK/AWS Secret Access Key")
+        (@arg verbosity: -v +multiple "设置调试等级")
     ).get_matches();
-    debug!("ArgMatches init end");
+
+    match matches.occurrences_of("v") {
+        1 => env::set_var("RUST_LOG", "error"),
+        2 => env::set_var("RUST_LOG", "warm"),
+        3 => env::set_var("RUST_LOG", "debug"),
+        _ => {}
+    }
+    env_logger::init().unwrap();
+
+    debug!("{:#?}", matches);
 
     match matches.subcommand() {
         ("bucket", Some(matches)) => {
             use cli::bucket::*;
             match matches.subcommand() {
-                ("new", Some(matches)) => {}
-                ("rm", Some(matches)) => {}
-                ("ls", Some(matches)) => {}
+                ("new", Some(args)) => create(args),
+                ("rm", Some(args)) => delete(args),
+                ("ls", Some(args)) => list(args),
                 _ => {}
             }
         }
         ("object", Some(matches)) => {
             use cli::object::*;
+            let bucket = matches.value_of("bucket_name").unwrap();
             match matches.subcommand() {
-                ("put", Some(matches)) => {}
-                ("get", Some(matches)) => {}
-                ("down", Some(matches)) => {}
-                ("rm", Some(matches)) => {}
-                ("share", Some(matches)) => {}
+                ("ls", Some(args)) => list(bucket, args),
+                ("up", Some(args)) => put_args(bucket, args),
+                // ("get", Some(args)) => get(bucket, args),
+                ("down", Some(args)) => download(bucket, args),
+                ("rm", Some(args)) => delete(bucket, args),
+                ("share", Some(args)) => share(bucket, args),
                 _ => {}
             }
         }
-        ("iam", Some(matches)) => {
+        ("account", Some(matches)) => {
             use cli::iam::*;
             match matches.subcommand() {
-                ("new", Some(matches)) => {}
-                ("rm", Some(matches)) => {}
-                ("ls", Some(matches)) => {}
-                ("set", Some(matches)) => {}
+                ("new", Some(args)) => create(args),
+                ("rm", Some(args)) => delete(args),
+                ("ls", Some(args)) => list(args),
+                ("set", Some(args)) => update(args),
                 _ => {}
             }
         }

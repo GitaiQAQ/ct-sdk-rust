@@ -31,16 +31,21 @@ use clap::ArgMatches;
 
 pub fn list(args: &ArgMatches) {
     debug!("List AccessKey");
+    let quiet = args.is_present("quiet");
+
     match CTClient::default_securely_client().list_access_key(&ListAccessKeyRequest {
         ..Default::default()
     }) {
-        Ok(out) => printstd!(
-            out.access_key_metadata.member,
-            user_name,
-            access_key_id,
-            status,
-            is_primary
-        ),
+        Ok(out) => match quiet {
+            false => printstd!(
+                out.access_key_metadata.member,
+                user_name,
+                access_key_id,
+                status,
+                is_primary
+            ),
+            true => printlist!(out.access_key_metadata.member, access_key_id),
+        },
         Err(err) => println!("{:?}", err),
     }
 }
@@ -59,9 +64,11 @@ pub fn create(args: &ArgMatches) {
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Access Key");
 
-    let access_key_id = args.value_of("ak").unwrap();
+    let access_key_id = args.value_of("access_key_id").unwrap().to_string();
 
-    match CTClient::default_securely_client().delete_access_key(&DeleteAccessKeyRequest { access_key_id }) {
+    match CTClient::default_securely_client()
+        .delete_access_key(&DeleteAccessKeyRequest { access_key_id })
+    {
         Ok(out) => println!("{:?}", out),
         Err(err) => println!("{:?}", err),
     }
@@ -71,14 +78,17 @@ pub fn delete(args: &ArgMatches) {
 pub fn update(args: &ArgMatches) {
     debug!("Update Access Key");
 
-    let access_key_id = args.value_of("ak").unwrap();
-    let status = args.value_of("status").unwrap();
-    let is_primary = args.value_of("is_primary").unwrap();
+    let access_key_id = args.value_of("access_key_id").unwrap().to_string();
+    let status = args.is_present("status");
+    let is_primary = args.is_present("is_primary");
 
     match CTClient::default_securely_client().update_access_key(&UpdateAccessKeyRequest {
         access_key_id,
-        status: Status::Inactive,
-        is_primary: true,
+        status: match status {
+            true => Status::Active,
+            false => Status::Inactive,
+        },
+        is_primary,
     }) {
         Ok(out) => println!("{:?}", out),
         Err(err) => println!("{:?}", err),

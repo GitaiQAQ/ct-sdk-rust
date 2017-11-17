@@ -50,10 +50,21 @@ macro_rules! printstd {
     });
 }
 
+/// Print struct by prettytable to std.
+#[macro_export]
+macro_rules! printlist {
+    ($s:expr, $key:ident) => ({
+        $s
+        .iter()
+        .for_each(|elt|
+            println!("{}", elt.$key));
+    });
+}
+
 #[macro_export]
 macro_rules! print_aws_err {
     ($error:expr) => ({
         debug!("{:#?}", $error);
-        println!("{}", $error.aws.code);
+        print!("{}", $error.aws.code);
     });
 }

@@ -19,6 +19,8 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use colored::*;
+
 use ct_sdk::ct::s3::acl::CannedAcl;
 use ct_sdk::ct::s3::bucket::*;
 use ct_sdk::ct::s3::acl::*;
@@ -35,8 +37,13 @@ use clap::ArgMatches;
 pub fn list(args: &ArgMatches) {
     debug!("List Bucket");
 
+    let quiet = args.is_present("quiet");
+
     match CTClient::default_securely_client().list_buckets() {
-        Ok(out) => printstd!(out.buckets, name, creation_date),
+        Ok(out) => match quiet {
+            false => printstd!(out.buckets, name, creation_date),
+            true => printlist!(out.buckets, name),
+        },
         Err(err) => print_aws_err!(err),
     }
 }
@@ -45,13 +52,14 @@ pub fn list(args: &ArgMatches) {
 /// Creates an BUCKET(mb)
 pub fn create(args: &ArgMatches) {
     debug!("Create Bucket");
-    let bucket = args.value_of("bucket").unwrap();
+
+    let bucket = args.value_of("bucket_name").unwrap();
 
     match CTClient::default_securely_client().create_bucket(&CreateBucketRequest {
-        bucket: name.clone(),
+        bucket: bucket.to_string(),
         ..Default::default()
     }) {
-        Ok(out) => println!("Create {} SUCCESS in {}", name, out.location),
+        Ok(out) => println!("Create {} SUCCESS in {}", bucket, out.location),
         Err(err) => print_aws_err!(err),
     }
 }
@@ -59,15 +67,21 @@ pub fn create(args: &ArgMatches) {
 // TODO: 更改创建的 Bucket属性（私有、公有、只读）
 pub fn acl(args: &ArgMatches) {
     debug!("acl");
-    let bucket = args.value_of("bucket").unwrap();
-    let acl = args.value_of("acl").unwrap();
+    let bucket = args.value_of("bucket_name").unwrap();
+    let read = args.is_present("read");
+    let write = args.is_present("write");
 
     match CTClient::default_securely_client().put_bucket_acl(&PutBucketAclRequest {
-        bucket: name.clone(),
-        acl: Some(acl),
+        bucket: bucket.to_string(),
+        acl: Some(match (read, write) {
+            (true, true) => CannedAcl::PublicReadWrite,
+            (true, false) => CannedAcl::PublicRead,
+            (false, false) => CannedAcl::Private,
+            _ => CannedAcl::Private,
+        }),
         ..Default::default()
     }) {
-        Ok(_) => println!("Update ACL of {} SUCCESS.", name),
+        Ok(_) => println!("Update ACL of {} SUCCESS.", bucket),
         Err(err) => print_aws_err!(err),
     };
 }
@@ -79,13 +93,35 @@ pub fn acl(args: &ArgMatches) {
 /// before the BUCKET is deleted.
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Bucket");
-    let bucket = args.value_of("bucket").unwrap();
+    let count = args.occurrences_of("buckets");
+    let buckets = args.values_of("buckets").unwrap().collect::<Vec<_>>();
+    let force = args.is_present("force");
 
-    match CTClient::default_securely_client().delete_bucket(&DeleteBucketRequest {
-        bucket: name.clone(),
-        ..Default::default()
-    }) {
-        Ok(_) => println!("Remove {} SUCCESS", name),
-        Err(err) => print_aws_err!(err),
-    }
+    let ct = CTClient::default_securely_client();
+
+    let mut success = 0;
+    let mut error = 0;
+
+    buckets.iter().for_each(|bucket| {
+        print!("{}\t", bucket);
+        match ct.delete_bucket(&DeleteBucketRequest {
+            bucket: bucket.to_string(),
+            ..Default::default()
+        }) {
+            Ok(output) => {
+                debug!("{:#?}", output);
+                println!("{}", " ✓ ".green().bold());
+                success += 1;
+            }
+            Err(err) => {
+                println!("{}", " ✗ ".red().bold());
+                error += 1;
+            }
+        }
+    });
+
+    println!("\nAll: {}, Success: {}, Error: {}",
+             count,
+             format!("{}", success).green(),
+             format!("{}", error).red())
 }
