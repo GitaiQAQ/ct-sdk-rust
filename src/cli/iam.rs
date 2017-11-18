@@ -27,25 +27,37 @@ use prettytable::row::Row;
 use prettytable::cell::Cell;
 use prettytable::format::FormatBuilder;
 
+use colored::*;
+
 use clap::ArgMatches;
 
 pub fn list(args: &ArgMatches) {
     debug!("List AccessKey");
     let quiet = args.is_present("quiet");
+    let all = args.is_present("all");
 
-    match CTClient::default_securely_client().list_access_key(&ListAccessKeyRequest {
+    let ct = CTClient::default_securely_client();
+
+    match ct.list_access_key(&ListAccessKeyRequest {
         ..Default::default()
     }) {
-        Ok(out) => match quiet {
-            false => printstd!(
-                out.access_key_metadata.member,
-                user_name,
-                access_key_id,
-                status,
-                is_primary
-            ),
-            true => printlist!(out.access_key_metadata.member, access_key_id),
-        },
+        Ok(out) => {
+            let out = match all {
+                false => out.access_key_metadata
+                    .member
+                    .iter()
+                    .filter(|elm| !elm.is_primary)
+                    .collect::<Vec<_>>(),
+                true => out.access_key_metadata
+                    .member
+                    .iter()
+                    .collect::<Vec<_>>(),
+            };
+            match quiet {
+                false => printstd!(out, access_key_id, user_name, status, is_primary),
+                true => printlist!(out, access_key_id),
+            }
+        }
         Err(err) => println!("{:?}", err),
     }
 }
@@ -53,10 +65,19 @@ pub fn list(args: &ArgMatches) {
 /// 创建一组 AK/SK
 pub fn create(args: &ArgMatches) {
     debug!("Create Access Key");
-
     match CTClient::default_securely_client().create_access_key() {
-        Ok(out) => println!("{:?}", out),
-        Err(err) => println!("{:?}", err),
+        Ok(out) => printstc!(
+            out,
+            access_key_id,
+            secret_access_key,
+            user_name,
+            status,
+            is_primary
+        ),
+        Err(err) => {
+            debug!("{:#?}", err);
+            println!("{}", " ✗ ".red().bold());
+        }
     }
 }
 
@@ -64,14 +85,37 @@ pub fn create(args: &ArgMatches) {
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Access Key");
 
-    let access_key_id = args.value_of("access_key_id").unwrap().to_string();
+    let count = args.occurrences_of("access_keys");
+    let access_keys = args.values_of("access_keys").unwrap().collect::<Vec<_>>();
+    let force = args.is_present("force");
 
-    match CTClient::default_securely_client()
-        .delete_access_key(&DeleteAccessKeyRequest { access_key_id })
-    {
-        Ok(out) => println!("{:?}", out),
-        Err(err) => println!("{:?}", err),
-    }
+    let ct = CTClient::default_securely_client();
+
+    let mut success = 0;
+    let mut error = 0;
+
+    access_keys.iter().for_each(|access_key| {
+        print!("{}", access_key);
+        match ct.delete_access_key(&DeleteAccessKeyRequest {
+            access_key_id: access_key.to_string(),
+        }) {
+            Ok(out) => {
+                debug!("{:#?}", out);
+                println!("{}", " ✓ ".green().bold());
+            }
+            Err(err) => {
+                debug!("{:#?}", err);
+                println!("{}", " ✗ ".red().bold());
+            }
+        }
+    });
+
+    println!(
+        "\nAll: {}, Success: {}, Error: {}",
+        count,
+        format!("{}", success).green(),
+        format!("{}", error).red()
+    )
 }
 
 /// 更改 AK/SK属性（主秘钥/普通秘钥）
@@ -82,15 +126,22 @@ pub fn update(args: &ArgMatches) {
     let status = args.is_present("status");
     let is_primary = args.is_present("is_primary");
 
+    print!("{}", access_key_id);
     match CTClient::default_securely_client().update_access_key(&UpdateAccessKeyRequest {
         access_key_id,
         status: match status {
-            true => Status::Active,
-            false => Status::Inactive,
+            true => Some(Status::Active),
+            false => Some(Status::Inactive),
         },
-        is_primary,
+        is_primary: Some(is_primary),
     }) {
-        Ok(out) => println!("{:?}", out),
-        Err(err) => println!("{:?}", err),
+        Ok(out) => {
+            debug!("{:#?}", out);
+            println!("{}", " ✓ ".green().bold());
+        }
+        Err(err) => {
+            debug!("{:#?}", err);
+            println!("{}", " ✗ ".red().bold());
+        }
     }
 }

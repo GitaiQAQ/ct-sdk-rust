@@ -39,6 +39,20 @@ macro_rules! table {
 
 /// Print struct by prettytable to std.
 #[macro_export]
+macro_rules! printstc {
+    ($s:expr, $( $key:ident ), *) => ({
+        let mut table = Table::init(vec![ $( Row::new(vec![
+            Cell::new(stringify!($key).to_uppercase().as_ref()),
+            Cell::new(format!("{}", $s.$key).as_ref())])) ,* ]);
+        table.set_format(FormatBuilder::new()
+            .padding(0, 5)
+            .build());
+        table.printstd();
+    });
+}
+
+/// Print struct by prettytable to std.
+#[macro_export]
 macro_rules! printstd {
     ($s:expr, $( $key:ident ), *) => ({
         let mut table = Table::init($s

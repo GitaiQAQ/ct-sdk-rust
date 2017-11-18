@@ -162,7 +162,8 @@ pub fn download(bucket: &str, args: &ArgMatches) {
             None,
         ) {
             Ok(out) => {
-                let mut file = match File::create(Path::new(format!("{}{}", output, key).as_str())) {
+                let mut file = match File::create(Path::new(format!("{}{}", output, key).as_str()))
+                {
                     Ok(file) => file,
                     Err(err) => {
                         debug!("{:#?}", err);
@@ -243,13 +244,15 @@ pub fn put_args(bucket: &str, args: &ArgMatches) {
                 Path::new(key),
                 prefix.to_string(),
                 storage_class.clone(),
-                reverse),
+                reverse,
+            ),
             false => put(
                 bucket.to_string(),
                 Path::new(key),
                 prefix.to_string(),
                 storage_class.clone(),
-                reverse),
+                reverse,
+            ),
         }
     });
 }
@@ -263,7 +266,7 @@ pub fn put_args(bucket: &str, args: &ArgMatches) {
 /// when uploading to S3, which allows you set a variety of options
 /// like content-type and content-encoding, plus additional metadata
 /// specific to your applications.
-pub fn put(bucket: String, path: &Path, prefix:String, storage_class: String, reverse: bool) {
+pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, reverse: bool) {
     debug!("Put Object");
     if path.is_dir() {
         if let Ok(entries) = path.read_dir() {
@@ -274,7 +277,7 @@ pub fn put(bucket: String, path: &Path, prefix:String, storage_class: String, re
                         entry.path().as_ref(),
                         prefix.clone(),
                         storage_class.clone(),
-                        reverse
+                        reverse,
                     );
                 }
             }
@@ -326,7 +329,13 @@ pub fn put(bucket: String, path: &Path, prefix:String, storage_class: String, re
     }
 }
 
-pub fn put_multithread(bucket: String, path: &Path, prefix:String, storage_class: String, reverse: bool) {
+pub fn put_multithread(
+    bucket: String,
+    path: &Path,
+    prefix: String,
+    storage_class: String,
+    reverse: bool,
+) {
     debug!("Put Object Multithread");
     if path.is_dir() {
         if let Ok(entries) = path.read_dir() {
@@ -346,7 +355,7 @@ pub fn put_multithread(bucket: String, path: &Path, prefix:String, storage_class
                                 entry.path().as_ref(),
                                 prefix,
                                 storage_class.clone(),
-                                reverse
+                                reverse,
                             );
                             1
                         }));
@@ -485,10 +494,12 @@ pub fn delete(bucket: &str, args: &ArgMatches) {
     });
 
 
-    println!("\nAll: {}, Success: {}, Error: {}",
-             count,
-             format!("{}", success).green(),
-             format!("{}", error).red())
+    println!(
+        "\nAll: {}, Success: {}, Error: {}",
+        count,
+        format!("{}", success).green(),
+        format!("{}", error).red()
+    )
 }
 
 /// 分享已上传的 Object（Share）

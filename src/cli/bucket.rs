@@ -120,8 +120,10 @@ pub fn delete(args: &ArgMatches) {
         }
     });
 
-    println!("\nAll: {}, Success: {}, Error: {}",
-             count,
-             format!("{}", success).green(),
-             format!("{}", error).red())
+    println!(
+        "\nAll: {}, Success: {}, Error: {}",
+        count,
+        format!("{}", success).green(),
+        format!("{}", error).red()
+    )
 }

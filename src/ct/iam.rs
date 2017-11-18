@@ -26,11 +26,14 @@ use std::str::FromStr;
 use std::fmt::{Display, Error, Formatter};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
+use aws_sdk_rust::aws::common::signature::build_canonical_query_string;
 use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::s3client::sign_and_execute;
 
 use aws_sdk_rust::aws::common::xmlutil::*;
 use aws_sdk_rust::aws::common::common::*;
+use aws_sdk_rust::aws::common::params::ServiceParams;
+use aws_sdk_rust::aws::common::params::Params;
 use aws_sdk_rust::aws::errors::aws::AWSError;
 
 use aws_sdk_rust::aws::errors::s3::S3Error;
@@ -351,8 +354,8 @@ impl DeleteAccessKeyOutputParser {
 #[derive(Debug, Default, RustcDecodable, RustcEncodable)]
 pub struct UpdateAccessKeyRequest {
     pub access_key_id: AccessKeyId,
-    pub status: Status,
-    pub is_primary: bool,
+    pub status: Option<Status>,
+    pub is_primary: Option<bool>,
 }
 
 /// Default output of all admin functions
@@ -411,21 +414,19 @@ impl CTClientIAM for CTClient {
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
-        let max_items = match input.max_items {
-            Some(max_items) => max_items.to_string(),
-            _ => "".to_string(),
-        };
+        let mut params = Params::new();
 
-        let marker = match input.marker {
-            Some(marker) => marker.to_string(),
-            _ => "".to_string(),
-        };
+        params.put("Action", "ListAccessKey");
 
-        let body = format!(
-            "Action=ListAccessKey&MaxItems={}&Marker={}",
-            &max_items,
-            &marker
-        );
+        if let Some(max_items) = input.max_items {
+            params.put("MaxItems", &max_items);
+        }
+
+        if let Some(marker) = input.marker {
+            params.put("Marker", &marker);
+        }
+
+        let body = build_canonical_query_string(&params);
 
         payload = body.into_bytes();
         request.set_payload(Some(&payload));
@@ -445,10 +446,7 @@ impl CTClientIAM for CTClient {
         match status {
             200 => {
                 stack.next(); // ListAccessKeysResponse
-                Ok(try!(ListAccessKeyOutputParser::parse_xml(
-                    "ListAccessKeysResult",
-                    &mut stack
-                )))
+                Ok((ListAccessKeyOutputParser::parse_xml("ListAccessKeysResult", &mut stack))?)
             }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
@@ -463,8 +461,7 @@ impl CTClientIAM for CTClient {
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
-        request.set_payload(Some("Action=CreateAccessKey".as_bytes()));
-        // request.add_param("MaxItems", "10");
+        request.set_payload(Some("Action=CreateAccessKey&IsPrimary=false".as_bytes()));
 
         let result = sign_and_execute(
             &self.dispatcher,
@@ -481,10 +478,7 @@ impl CTClientIAM for CTClient {
         match status {
             200 => {
                 stack.next(); // CreateAccessKeyResponse
-                Ok(try!(CreateAccessKeyOutputParser::parse_xml(
-                    "CreateAccessKeyResult",
-                    &mut stack
-                )))
+                Ok((CreateAccessKeyOutputParser::parse_xml("CreateAccessKeyResult", &mut stack))?)
             }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
@@ -525,10 +519,7 @@ impl CTClientIAM for CTClient {
         match status {
             200 => {
                 stack.next(); // DeleteAccessKeyResponse
-                Ok(try!(DeleteAccessKeyOutputParser::parse_xml(
-                    "ResponseMetadata",
-                    &mut stack
-                )))
+                Ok((DeleteAccessKeyOutputParser::parse_xml("ResponseMetadata", &mut stack))?)
             }
             _ => {
                 let aws = try!(AWSError::parse_xml("Error", &mut stack));
@@ -547,12 +538,20 @@ impl CTClientIAM for CTClient {
 
         request.set_hostname(Some(String::from("oos-bj2-iam.ctyunapi.cn")));
 
-        let body = format!(
-            "Action=UpdateAccessKey&AccessKeyId={}&Status={}&IsPrimary={}",
-            &input.access_key_id,
-            &input.status,
-            &input.is_primary
-        );
+        let mut params = Params::new();
+
+        params.put("Action", "UpdateAccessKey");
+        params.put("AccessKeyId", &input.access_key_id);
+
+        if let Some(ref status) = input.status {
+            params.put("Status", &status.to_string());
+        }
+
+        if let Some(ref is_primary) = input.is_primary {
+            params.put("IsPrimary", &format!("{}", is_primary));
+        }
+
+        let body = build_canonical_query_string(&params);
 
         payload = body.into_bytes();
         request.set_payload(Some(&payload));

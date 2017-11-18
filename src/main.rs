@@ -46,22 +46,18 @@ extern crate prettytable;
 extern crate rustc_serialize;
 
 use std::env;
+use env_logger::LogBuilder;
+use log::{LogLevel, LogLevelFilter};
 use clap::ArgMatches;
 
 mod cli;
 
-// http://oos-bj2.ctyunapi.cn
 #[allow(unused_variables)]
 fn main() {
     let matches: ArgMatches = clap_app!(myapp =>
         (version: "0.1")
         (author: "Gitai<i@gitai.me>")
         (about: "Does awesome things")
-        (@subcommand account =>
-            (about: "Write AK/SK to disk(~/.aws/credentials)")
-            (@arg aws_access_key_id: +required -a --ak +takes_value "AK/AWS Access Key Id")
-            (@arg aws_secret_access_key: +required -s --sk +takes_value "SK/AWS Secret Access Key")
-        )
         (@subcommand bucket =>
             (about: "管理仓库")
             (@subcommand ls =>
@@ -125,21 +121,22 @@ fn main() {
                 (@arg expires: -e --expires +takes_value "时间（1500s）")
             )
         )
-        (@subcommand iam =>
+        (@subcommand account =>
             (@subcommand ls =>
-                (about: "列出全部 AK/SK")
+                (about: "列出 AK/SK")
                 (@arg quiet: -q --quiet "精简模式，只显示 AK")
+                (@arg all: -a --all "显示所有　AK （默认不显示主 Key）")
             )
             (@subcommand new =>
                 (about: "新建 AK/SK")
             )
             (@subcommand rm =>
                 (about: "删除 AK/SK")
-                (@arg access_key_id: --ak +required +takes_value)
+                (@arg access_keys: +required +multiple +takes_value)
             )
             (@subcommand set =>
                 (about: "更改 AK/SK 属性")
-                (@arg access_key_id: --ak +required +takes_value)
+                (@arg access_key_id: +required +takes_value)
                 (@arg status: -s --status "生效/禁用")
                 (@arg is_primary: -p --isprimary "主秘钥/普通秘钥")
             )
@@ -149,13 +146,26 @@ fn main() {
         (@arg verbosity: -v +multiple "设置调试等级")
     ).get_matches();
 
-    match matches.occurrences_of("v") {
-        1 => env::set_var("RUST_LOG", "error"),
-        2 => env::set_var("RUST_LOG", "warm"),
-        3 => env::set_var("RUST_LOG", "debug"),
-        _ => {}
+    LogBuilder::new()
+        .parse(match matches.occurrences_of("verbosity") {
+            1 => "ct_cli=Debug",
+            2 => "ct_cli=Debug, aws_sdk_rust=Debug",
+            3 => "Trace",
+            _ => "Error",
+        })
+        .init();
+
+    match (
+        matches.value_of("aws_access_key_id"),
+        matches.value_of("aws_secret_access_key"),
+    ) {
+        (Some(ak), Some(sk)) => {
+            env::set_var("AWS_ACCESS_KEY_ID", ak);
+            env::set_var("AWS_SECRET_ACCESS_KEY", sk);
+            debug!("[ParametersProvider] AK: {} SK: {}", ak, sk);
+        }
+        _ => debug!("No Parameters Provider"),
     }
-    env_logger::init().unwrap();
 
     debug!("{:#?}", matches);
 
@@ -193,77 +203,6 @@ fn main() {
             }
         }
         _ => {}
-    }
-
-    {
-        // use cli::object::CTCLIObject;
-        // s3.share(String::from("gitai"), String::from("date.txt"), None);
-
-        /*use std::thread;
-        use std::sync::{Arc, Mutex};
-        thread::spawn(|| {
-            use cli::bucket::*;
-            let s3 = CTClient::default_ctyun_securely_client();
-            create(&s3, String::from("testqaq"));
-            list(&s3);
-        });*/
-
-    }
-
-    {
-        /*use cli::bucket::*;
-        let s3 = CTClient::default_ctyun_securely_client();
-        create(&s3, String::from("testqaq"));
-        list(&s3);*/
-    }
-
-    {
-        /*use std::thread;
-        use std::sync::{Arc, Mutex};
-        thread::spawn(|| {
-            use cli::object::put;
-            let s3 = CTClient::default_ctyun_securely_client();
-            put(&s3,
-                String::from("testqaq"),
-                String::from(""),
-                Path::new("/home/gitai/project/stanford-cpp-library/autograder"),
-                None);
-        });*/
-        /*use std::path::Path;
-        use cli::object::put_thread;
-        put_thread(String::from("testqaq"),
-            String::from(""),
-            Path::new("/home/gitai/project/stanford-cpp-library/autograder"),
-            None);*/
-    }
-
-    {
-        /*s3.put_securely(
-            String::from("gitai.test"),
-            String::from("date_securely.txt"),
-            Path::new("/home/gitai/date.txt"),
-            None);*/
-        // list(s3, false, String::from("gitai.test"), Some("/data".to_string()));
-        /*s3.get(
-            String::from("gitai.test"),
-            String::from("date.txt"));*/
-        /*s3.get(
-            String::from("gitai.test"),
-            String::from("date_securely.txt"));*/
-        /*s3.get_securely(
-            String::from("gitai.test"),
-            String::from("date_securely.txt"));*/
-    }
-
-    // s3.create(String::from("gitai.test"));
-    //s3.acl(String::from("gitai.test"), CannedAcl::PublicReadWrite);
-    // s3.delete(String::from("gitai.test"));
-    {
-        // use cli::iam::CTCLIAM;
-        // s3.list();
-        // s3.create();
-        // s3.delete(String::from("d72e05685a5e7d7b0eb7"));
-        // s3.update(String::from("2aa302a2e7182784409e"));
     }
     debug!("END");
 }
