@@ -27,6 +27,7 @@
 
 use url::Url;
 use chrono::UTC;
+use md5::{Md5, Digest};
 
 use hyper::client::Client;
 use hyper::header::Headers;
@@ -251,9 +252,9 @@ impl CTClient {
 
     /// Set the CTYun OOS Config default
     #[allow(unused_variables)]
-    pub fn default_securely_client() -> Self {
+    pub fn default_securely_client(key: String) -> Self {
         let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
-        CTClient::new(credentials_provider, Some(String::from("test231")))
+        CTClient::new(credentials_provider, Some(key))
     }
 }
 
@@ -297,6 +298,12 @@ fn build_canonical_query_string(params: &Params) -> String {
     }
 
     output
+}
+
+pub fn md5(input: &[u8]) -> String {
+    let mut sh = Md5::default();
+    sh.consume(input);
+    sh.hash().to_base64(STANDARD)
 }
 
 #[inline]

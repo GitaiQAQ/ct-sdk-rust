@@ -79,6 +79,6 @@ macro_rules! printlist {
 macro_rules! print_aws_err {
     ($error:expr) => ({
         debug!("{:#?}", $error);
-        print!("{}", $error.aws.code);
+        error!("{}", $error.message);
     });
 }

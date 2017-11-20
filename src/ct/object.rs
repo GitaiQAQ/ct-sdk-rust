@@ -20,8 +20,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! Additional API for Object Operations
-//!
-use md5;
+use md5::{Md5, Digest};
+use std::iter::repeat;
 use rustc_serialize::base64::{ToBase64, STANDARD};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
@@ -33,6 +33,9 @@ use aws_sdk_rust::aws::errors::s3::S3Error;
 
 use ct::sdk::CTClient;
 use ct::sdk::CTSignedRequest;
+use ct::crypto_io::encrypt_payload;
+use ct::crypto_io::decrypt_payload;
+use ct::crypto_io::CipherType;
 
 //#[derive(Debug, Default)]
 #[derive(Debug, Default, RustcDecodable, RustcEncodable)]
@@ -133,23 +136,38 @@ impl CTClientEncryptionObject for CTClient {
         input: PutObjectRequest,
         operation: Option<&mut Operation>,
     ) -> Result<PutObjectOutput, S3Error> {
-        // let mut request = PutObjectRequest::from(*input);
-        // input.metadata.unwrap().len() as usize
-        let mut cipherbody = vec![0u8; 4096];
-        {
-            let plaintext = input.body.unwrap();
-            cipherbody = vec![0u8; plaintext.len() + (16 - plaintext.len() % 16)];
-            encrypt(&plaintext, &mut cipherbody);
-            //let mut plain_out: Vec<u8> = repeat(0).take(plaintext.len()).collect();
-            //decrypt(&cipherbody, &mut plain_out);
-            // println!("cipherbody {:?}", String::from_utf8_lossy(&cipherbody));
-        }
+        let plaintext = input.body.unwrap();
+        let cipherbody = match encrypt_payload(
+            CipherType::Aes256Cfb,
+            &CipherType::Aes256Cfb.bytes_to_key("CipherType::Aes2".as_bytes())[..],
+            input.body.unwrap()) {
+            Ok(body) => body,
+            Err(err) => {
+                return Err(S3Error::default());
+            }
+        };
+        /*{
+            let plain_out = match decrypt_payload(
+                CipherType::Aes256Cfb,
+                &CipherType::Aes256Cfb.bytes_to_key("CipherType::Aes2".as_bytes())[..],
+                &cipherbody) {
+                Ok(body) => body,
+                Err(err) => {
+                    return Err(S3Error::default());
+                }
+            };
+
+            println!("plaintext {}", String::from_utf8_lossy(&plain_out));
+            println!("plaintext {} cipherbody {}", &plain_out.len(), &cipherbody.len());
+        }*/
 
         let mut request = PutObjectRequest::from(input);
         request.body = Some(&cipherbody);
 
         // Compute hash - Hash is slow
-        let hash = md5::compute(request.body.unwrap()).to_base64(STANDARD);
+        let mut sh = Md5::default();
+        sh.consume(request.body.unwrap());
+        let hash = sh.hash().to_base64(STANDARD);
         request.content_md5 = Some(hash);
 
         self.put_object(&request, operation)
@@ -164,14 +182,18 @@ impl CTClientEncryptionObject for CTClient {
             Ok(out) => {
                 let mut output = GetObjectOutput::from(out);
 
-                let mut plaintext: Vec<u8>;
-                {
-                    plaintext = vec![0u8; output.get_body().len()];
-                }
+                let plaintext;
                 {
                     let cipherbody = &output.get_body();
-                    decrypt(&cipherbody, &mut plaintext);
-                    // println!("plaintext {:?}", String::from_utf8_lossy(&plaintext));
+                    plaintext = match decrypt_payload(
+                        CipherType::Aes256Cfb,
+                        &CipherType::Aes256Cfb.bytes_to_key("CipherType::Aes2".as_bytes())[..],
+                        &cipherbody) {
+                        Ok(body) => body,
+                        Err(err) => {
+                            return Err(S3Error::default());
+                        }
+                    };
                 }
                 if output.is_body {
                     output.body = plaintext;
@@ -186,61 +208,5 @@ impl CTClientEncryptionObject for CTClient {
 
     fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error> {
         unimplemented!()
-    }
-}
-
-// use openssl::rsa::Rsa;
-
-use crypto::*;
-use crypto::buffer::*;
-use std::iter::repeat;
-
-/// The size of the buffers used when reading and decompressing data
-pub const BUFFER_SIZE: usize = 4096;
-
-fn encrypt(plaintext: &[u8], ciphertext: &mut [u8]) {
-    let key: Vec<u8> = repeat(1).take(16).collect();
-    let iv: Vec<u8> = repeat(3).take(16).collect();
-
-    let mut encryptor = aes::cbc_encryptor(
-        aes::KeySize::KeySize256,
-        &key[..],
-        &iv.clone(),
-        blockmodes::PkcsPadding,
-    );
-
-    {
-        let mut buff_in = RefReadBuffer::new(&plaintext);
-        let mut buff_out = RefWriteBuffer::new(ciphertext);
-
-        let result = encryptor.encrypt(&mut buff_in, &mut buff_out, true);
-
-        match result {
-            Ok(_buffer_underflow) => {}
-            Err(err) => panic!("Error {:?}", err),
-        }
-    }
-}
-
-
-fn decrypt(ciphertext: &[u8], plaintext: &mut [u8]) {
-    let key: Vec<u8> = repeat(1).take(16).collect();
-    let iv: Vec<u8> = repeat(3).take(16).collect();
-
-    let mut decryptor = aes::cbc_decryptor(
-        aes::KeySize::KeySize256,
-        &key[..],
-        &iv.clone(),
-        blockmodes::PkcsPadding,
-    );
-
-    {
-        let mut buff_in = RefReadBuffer::new(&ciphertext);
-        let mut buff_out = RefWriteBuffer::new(plaintext);
-
-        match decryptor.decrypt(&mut buff_in, &mut buff_out, true) {
-            Ok(_buffer_underflow) => {}
-            Err(err) => panic!("Error {:?}", err),
-        }
     }
 }

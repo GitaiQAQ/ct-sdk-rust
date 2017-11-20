@@ -23,6 +23,8 @@ pub mod sdk;
 pub mod bucket;
 pub mod object;
 pub mod iam;
+mod crypto;
+mod crypto_io;
 
 pub use aws_sdk_rust::aws::*;
 pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;

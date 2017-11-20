@@ -23,14 +23,15 @@ use std::path::Path;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
-use md5;
 
 use colored::*;
 
 use rustc_serialize::base64::{ToBase64, STANDARD};
 
 use ct_sdk::ct::sdk::CTClient;
+use ct_sdk::ct::sdk::md5;
 use ct_sdk::ct::object::*;
+use ct_sdk::ct::errors::s3::S3Error;
 
 use prettytable::Table;
 use prettytable::row::Row;
@@ -55,7 +56,7 @@ pub fn list(bucket: &str, args: &ArgMatches) {
     //let encoding_type = args.value_of("encoding_type").unwrap();
     let quiet = args.is_present("quiet");
 
-    match CTClient::default_securely_client().list_objects(&ListObjectsRequest {
+    match CTClient::default_client().list_objects(&ListObjectsRequest {
         bucket: bucket.to_string(),
         //version: version.to_string(),
         prefix: match prefix {
@@ -81,7 +82,7 @@ pub fn new(bucket: &str, args: &ArgMatches) {
     let key = args.value_of("key").unwrap();
     let body = args.value_of("body").unwrap();
 
-    match CTClient::default_securely_client().put_object(
+    match CTClient::default_client().put_object(
         &PutObjectRequest {
             bucket: bucket.to_string(),
             key: key.to_string(),
@@ -102,18 +103,23 @@ pub fn new(bucket: &str, args: &ArgMatches) {
     }
 }
 
-pub fn get(bucket: &str, args: &ArgMatches) {
-    debug!("Downland Object");
+pub fn get_args(bucket: &str, args: &ArgMatches) {
+    debug!("Get Object");
     let key = args.value_of("key").unwrap();
 
-    match CTClient::default_securely_client().get_object(
-        &GetObjectRequest {
-            bucket: bucket.to_string(),
-            key: key.to_string(),
-            ..Default::default()
-        },
-        None,
-    ) {
+    match match (args.value_of("securely"), args.is_present("multithread")) {
+        (Some(password), true) => unimplemented!(),
+        (Some(password), false) => get_securely(
+            bucket.to_string(),
+            key.to_string(),
+            password.to_string(),
+        ),
+        (None, true) => unimplemented!(),
+        _ => get(
+            bucket.to_string(),
+            key.to_string(),
+        ),
+    } {
         Ok(out) => println!(
             "+--[ START ]----+\n{}\n+--[  END  ]----+",
             String::from_utf8_lossy(out.get_body())
@@ -122,55 +128,38 @@ pub fn get(bucket: &str, args: &ArgMatches) {
     }
 }
 
-
-pub fn get_securely(bucket: &str, args: &ArgMatches) {
-    debug!("Downland Object");
-    let key = args.value_of("key").unwrap();
-
-    match CTClient::default_securely_client().get_object_securely(
-        &GetObjectRequest {
-            bucket: bucket.to_string(),
-            key: key.to_string(),
-            ..Default::default()
-        },
-        None,
-    ) {
-        Ok(out) => println!(
-            "+--[ START ]----+\n{}\n+--[  END  ]----+",
-            String::from_utf8_lossy(out.get_body())
-        ),
-        Err(err) => print_aws_err!(err),
-    }
-}
-
-/// 下载已上传的 Object到本地（Download）
-pub fn download(bucket: &str, args: &ArgMatches) {
-    debug!("Downland Object");
+pub fn down_args(bucket: &str, args: &ArgMatches) {
+    debug!("Download Object");
     let keys = args.values_of("keys").unwrap().collect::<Vec<_>>();
     let output = args.value_of("dir").unwrap_or("./");
 
-    let ct = CTClient::default_securely_client();
+    let ct = CTClient::default_client();
 
     keys.iter().for_each(|key| {
         print!("{}\t", key);
-        match ct.get_object(
-            &GetObjectRequest {
-                bucket: bucket.to_string(),
-                key: key.to_string(),
-                ..Default::default()
-            },
-            None,
-        ) {
+        match match (args.value_of("securely"), args.is_present("multithread")) {
+            (Some(password), true) => unimplemented!(),
+            (Some(password), false) => get_securely(
+                bucket.to_string(),
+                key.to_string(),
+                password.to_string(),
+            ),
+            (None, true) => unimplemented!(),
+            _ => get(
+                bucket.to_string(),
+                key.to_string(),
+            ),
+        } {
             Ok(out) => {
                 let mut file = match File::create(Path::new(format!("{}{}", output, key).as_str()))
-                {
-                    Ok(file) => file,
-                    Err(err) => {
-                        debug!("{:#?}", err);
-                        println!("{}", " ✗ ".red().bold());
-                        return;
-                    }
-                };
+                    {
+                        Ok(file) => file,
+                        Err(err) => {
+                            debug!("{:#?}", err);
+                            println!("{}", " ✗ ".red().bold());
+                            return;
+                        }
+                    };
 
                 match file.write_all(out.get_body()) {
                     Ok(output) => {
@@ -188,39 +177,35 @@ pub fn download(bucket: &str, args: &ArgMatches) {
     });
 }
 
-pub fn download_securely(bucket: &str, args: &ArgMatches) {
+/// 下载已上传的 Object到本地（Download）
+pub fn get(bucket: String, key: String)
+    -> Result<GetObjectOutput, S3Error>
+{
     debug!("Downland Object");
-    let key = args.value_of("key").unwrap();
-    let path = args.value_of("path").unwrap();
 
-    match CTClient::default_securely_client().get_object(
+    CTClient::default_client().get_object(
         &GetObjectRequest {
             bucket: bucket.to_string(),
             key: key.to_string(),
             ..Default::default()
         },
         None,
-    ) {
-        Ok(out) => {
-            let mut file = match File::create(path) {
-                Ok(file) => file,
-                Err(e) => {
-                    debug!("{:#?}", e);
-                    println!("Error reading file {}", e);
-                    return;
-                }
-            };
+    )
+}
 
-            match file.write_all(out.get_body()) {
-                Ok(out) => {
-                    debug!("{:#?}", out);
-                    println!("Download {} from {}", key, bucket);
-                }
-                Err(err) => println!("{}", err),
-            }
-        }
-        Err(err) => print_aws_err!(err),
-    }
+pub fn get_securely(bucket: String, key: String, password: String)
+    -> Result<GetObjectOutput, S3Error>
+{
+    debug!("Downland Object");
+    CTClient::default_securely_client(password)
+        .get_object_securely(
+        &GetObjectRequest {
+            bucket: bucket.to_string(),
+            key: key.to_string(),
+            ..Default::default()
+        },
+        None,
+    )
 }
 
 pub fn put_args(bucket: &str, args: &ArgMatches) {
@@ -237,16 +222,24 @@ pub fn put_args(bucket: &str, args: &ArgMatches) {
     };
 
     keys.iter().for_each(|key| {
-        print!("{}\t", key);
-        match args.is_present("multithread") {
-            true => put_multithread(
+        match (args.value_of("securely"), args.is_present("multithread")) {
+            (Some(password), true) => unimplemented!(),
+            (Some(password), false) => put_securely(
+                bucket.to_string(),
+                Path::new(key),
+                prefix.to_string(),
+                password.to_string(),
+                storage_class.clone(),
+                reverse,
+            ),
+            (None, true) => put_multithread(
                 bucket.to_string(),
                 Path::new(key),
                 prefix.to_string(),
                 storage_class.clone(),
                 reverse,
             ),
-            false => put(
+            _ => put(
                 bucket.to_string(),
                 Path::new(key),
                 prefix.to_string(),
@@ -285,11 +278,12 @@ pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, r
         return;
     }
 
+    print!("{:?}\t", path);
     let file = match File::open(path) {
         Ok(file) => file,
-        Err(error) => {
-            debug!("{:#?}", error);
-            println!("{}", error);
+        Err(err) => {
+            debug!("{:#?}", err);
+            println!("{}", " ✗ ".red().bold());
             return;
         }
     };
@@ -310,14 +304,15 @@ pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, r
         false => Some(storage_class),
     };
 
-    request.key = path.file_name().unwrap().to_str().unwrap().to_string();
+    request.key = format!("{}{}", prefix, path.file_name().unwrap().to_str().unwrap());
     request.body = Some(&buffer);
 
     // Compute hash - Hash is slow
-    let hash = md5::compute(request.body.unwrap()).to_base64(STANDARD);
+    let hash = md5(request.body.unwrap());
+
     request.content_md5 = Some(hash);
 
-    match CTClient::default_securely_client().put_object(&request, None) {
+    match CTClient::default_client().put_object(&request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
             println!("{}", " ✓ ".green().bold());
@@ -371,9 +366,9 @@ pub fn put_multithread(
 
     let file = match File::open(path) {
         Ok(file) => file,
-        Err(error) => {
-            debug!("{:#?}", error);
-            println!("{}", error);
+        Err(err) => {
+            debug!("{:#?}", err);
+            println!("{:?} {}", path, " ✗ ".red().bold());
             return;
         }
     };
@@ -394,31 +389,59 @@ pub fn put_multithread(
         false => Some(storage_class),
     };
 
-    request.key = path.file_name().unwrap().to_str().unwrap().to_string();
+    request.key = format!("{}{}", prefix, path.file_name().unwrap().to_str().unwrap());
     request.body = Some(&buffer);
 
     // Compute hash - Hash is slow
-    let hash = md5::compute(request.body.unwrap()).to_base64(STANDARD);
+    let hash = md5(request.body.unwrap());
+
     request.content_md5 = Some(hash);
-    match CTClient::default_securely_client().put_object(&request, None) {
+    match CTClient::default_client().put_object(&request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
-            println!("{}", " ✓ ".green().bold());
+            println!("{:?} {}", path, " ✓ ".green().bold());
         }
         Err(err) => {
             print_aws_err!(err);
-            println!("{}", " ✗ ".red().bold());
+            println!("{:?} {}", path, " ✗ ".red().bold());
         }
     }
 }
 
 // TODO: 设置专属签名，实现自定义加密，使用户拥有独特的签名方式
-pub fn put_securely(bucket: &String, key: &String, path: &Path, storage_class: String) {
+pub fn put_securely(
+    bucket: String,
+    path: &Path,
+    prefix: String,
+    password: String,
+    storage_class: String,
+    reverse: bool,
+) {
+    debug!("Put Securely Object");
+    if path.is_dir() {
+        if let Ok(entries) = path.read_dir() {
+            for entry in entries {
+                if let Ok(entry) = entry {
+                    put_securely(
+                        bucket.clone(),
+                        entry.path().as_ref(),
+                        prefix.clone(),
+                        password.clone(),
+                        storage_class.clone(),
+                        reverse,
+                    );
+                }
+            }
+        }
+        return;
+    }
+
+    print!("{:?}\t", path);
     let file = match File::open(path) {
         Ok(file) => file,
-        Err(error) => {
-            debug!("{:#?}", error);
-            println!("{}", error);
+        Err(err) => {
+            debug!("{:#?}", err);
+            println!("{}", " ✗ ".red().bold());
             return;
         }
     };
@@ -433,16 +456,19 @@ pub fn put_securely(bucket: &String, key: &String, path: &Path, storage_class: S
     }
 
     let mut request = PutObjectRequest::default();
-    request.bucket = bucket.clone();
+    request.bucket = bucket.to_string();
     request.storage_class = match storage_class.is_empty() {
         true => None,
         false => Some(storage_class),
     };
 
-    request.key = key.clone();
+    request.key = format!("{}{}", prefix, path.file_name().unwrap().to_str().unwrap());
     request.body = Some(&buffer);
 
-    match CTClient::default_securely_client().put_object_securely(request, None) {
+    // Compute hash - Hash is slow
+    let hash = md5(request.body.unwrap());
+
+    match CTClient::default_securely_client(password).put_object_securely(request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
             println!("{}", " ✓ ".green().bold());
@@ -465,7 +491,7 @@ pub fn delete(bucket: &str, args: &ArgMatches) {
     let count = args.occurrences_of("keys");
     let keys = args.values_of("keys").unwrap().collect::<Vec<_>>();
 
-    let ct = CTClient::default_securely_client();
+    let ct = CTClient::default_client();
 
     let mut success = 0;
     let mut error = 0;
@@ -513,7 +539,7 @@ pub fn share(bucket: &str, args: &ArgMatches) {
         None => None,
     };
 
-    match CTClient::default_securely_client().presigned_object(&PresignedObjectRequest {
+    match CTClient::default_client().presigned_object(&PresignedObjectRequest {
         bucket: bucket.to_string(),
         key: key.to_string(),
         expires,

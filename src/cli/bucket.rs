@@ -39,7 +39,7 @@ pub fn list(args: &ArgMatches) {
 
     let quiet = args.is_present("quiet");
 
-    match CTClient::default_securely_client().list_buckets() {
+    match CTClient::default_client().list_buckets() {
         Ok(out) => match quiet {
             false => printstd!(out.buckets, name, creation_date),
             true => printlist!(out.buckets, name),
@@ -55,12 +55,19 @@ pub fn create(args: &ArgMatches) {
 
     let bucket = args.value_of("bucket_name").unwrap();
 
-    match CTClient::default_securely_client().create_bucket(&CreateBucketRequest {
+    print!("{}", bucket);
+    match CTClient::default_client().create_bucket(&CreateBucketRequest {
         bucket: bucket.to_string(),
         ..Default::default()
     }) {
-        Ok(out) => println!("Create {} SUCCESS in {}", bucket, out.location),
-        Err(err) => print_aws_err!(err),
+        Ok(out) => {
+            debug!("{:#?}", out);
+            println!("{}", " ✓ ".green().bold());
+        }
+        Err(err) => {
+            print_aws_err!(err);
+            println!("{}", " ✗ ".red().bold());
+        }
     }
 }
 
@@ -71,7 +78,8 @@ pub fn acl(args: &ArgMatches) {
     let read = args.is_present("read");
     let write = args.is_present("write");
 
-    match CTClient::default_securely_client().put_bucket_acl(&PutBucketAclRequest {
+    print!("{}", bucket);
+    match CTClient::default_client().put_bucket_acl(&PutBucketAclRequest {
         bucket: bucket.to_string(),
         acl: Some(match (read, write) {
             (true, true) => CannedAcl::PublicReadWrite,
@@ -81,8 +89,14 @@ pub fn acl(args: &ArgMatches) {
         }),
         ..Default::default()
     }) {
-        Ok(_) => println!("Update ACL of {} SUCCESS.", bucket),
-        Err(err) => print_aws_err!(err),
+        Ok(out) => {
+            debug!("{:#?}", out);
+            println!("{}", " ✓ ".green().bold());
+        }
+        Err(err) => {
+            print_aws_err!(err);
+            println!("{}", " ✗ ".red().bold());
+        }
     };
 }
 
@@ -97,7 +111,7 @@ pub fn delete(args: &ArgMatches) {
     let buckets = args.values_of("buckets").unwrap().collect::<Vec<_>>();
     let force = args.is_present("force");
 
-    let ct = CTClient::default_securely_client();
+    let ct = CTClient::default_client();
 
     let mut success = 0;
     let mut error = 0;

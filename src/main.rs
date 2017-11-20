@@ -41,7 +41,6 @@ extern crate ct_sdk;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate md5;
 extern crate prettytable;
 extern crate rustc_serialize;
 
@@ -76,8 +75,8 @@ fn main() {
             (@subcommand set =>
                 (about: "更改仓库属性（私有、公有、只读）")
                 (@arg bucket_name: +required +takes_value)
-                (@arg read: -r --read +takes_value "公开读取")
-                (@arg write: -w --write +takes_value "公开写入")
+                (@arg read: -r --read "公开读取")
+                (@arg write: -w --write "公开写入")
             )
         )
         (@subcommand object =>
@@ -99,7 +98,8 @@ fn main() {
                 (@arg keys: +required +multiple +takes_value "对象 ID 列表")
                 (@arg multithread: -m --multithread "多线程上传")
                 (@arg reverse: -r --reverse "递归子目录")
-                (@arg prefix: -p --prefix "前缀")
+                (@arg prefix: -p --prefix +takes_value "前缀")
+                (@arg securely: -s --securely +takes_value "加密")
             )
             /*(@subcommand get =>
                 (about: "读取对象")
@@ -110,6 +110,12 @@ fn main() {
                 (about: "下载对象")
                 (@arg keys: +required +multiple +takes_value "对象 ID 列表")
                 (@arg dir: -o --output +takes_value "储存文件夹")
+                (@arg securely: -s --securely +takes_value "解密")
+            )
+            (@subcommand get =>
+                (about: "读取对象")
+                (@arg key: +required +takes_value "对象 ID")
+                (@arg securely: -s --securely +takes_value "解密")
             )
             (@subcommand rm =>
                 (about: "删除对象")
@@ -141,8 +147,8 @@ fn main() {
                 (@arg is_primary: -p --isprimary "主秘钥/普通秘钥")
             )
         )
-        (@arg aws_access_key_id: -a --ak +takes_value "AK/AWS Access Key Id")
-        (@arg aws_secret_access_key: -s --sk +takes_value "SK/AWS Secret Access Key")
+        (@arg aws_access_key_id: -a --ak +takes_value "Access Key Id")
+        (@arg aws_secret_access_key: -s --sk +takes_value "Secret Access Key")
         (@arg verbosity: -v +multiple "设置调试等级")
     ).get_matches();
 
@@ -176,6 +182,7 @@ fn main() {
                 ("new", Some(args)) => create(args),
                 ("rm", Some(args)) => delete(args),
                 ("ls", Some(args)) => list(args),
+                ("set", Some(args)) => acl(args),
                 _ => {}
             }
         }
@@ -185,8 +192,8 @@ fn main() {
             match matches.subcommand() {
                 ("ls", Some(args)) => list(bucket, args),
                 ("up", Some(args)) => put_args(bucket, args),
-                // ("get", Some(args)) => get(bucket, args),
-                ("down", Some(args)) => download(bucket, args),
+                ("get", Some(args)) => get_args(bucket, args),
+                ("down", Some(args)) => down_args(bucket, args),
                 ("rm", Some(args)) => delete(bucket, args),
                 ("share", Some(args)) => share(bucket, args),
                 _ => {}
