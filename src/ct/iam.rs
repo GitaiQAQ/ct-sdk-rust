@@ -19,7 +19,7 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//! Additional API for Object Operations
+//! Additional API for IAM Operations
 //!
 use std::str;
 use std::str::FromStr;
@@ -78,7 +78,7 @@ pub struct AccessKeyMetadata {
     pub is_primary: bool,
 }
 
-/// `AccessKeyMetadata` used for `Contents` for ListAccessKeyOutput
+/// `AccessKeyMetadataList` used for `AccessKeyMetadata` for ListAccessKeyOutput
 #[derive(Debug, Default, RustcDecodable, RustcEncodable)]
 pub struct AccessKeyMetadataList {
     pub member: Vec<AccessKeyMetadata>,
@@ -388,15 +388,19 @@ impl UpdateAccessKeyOutputParser {
     }
 }
 
-
+/// A trait to additional iam operating for CTClient.
 pub trait CTClientIAM {
+    /// List all keys.
     fn list_access_key(&self, input: &ListAccessKeyRequest)
         -> Result<ListAccessKeyOutput, S3Error>;
+    /// Create a new key.
     fn create_access_key(&self) -> Result<CreateAccessKeyOutput, S3Error>;
+    /// Deletes a given key.
     fn delete_access_key(
         &self,
         input: &DeleteAccessKeyRequest,
     ) -> Result<DeleteAccessKeyOutput, S3Error>;
+    /// Set the status of key.
     fn update_access_key(
         &self,
         input: &UpdateAccessKeyRequest,

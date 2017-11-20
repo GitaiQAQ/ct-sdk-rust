@@ -47,7 +47,8 @@ pub struct PresignedObjectRequest {
 
 /// A trait to additional pre-signed for CTClient.
 pub trait CTClientObject {
-    /// Generate a pre-signed url for an S3 object, the returned url can be shared.
+    /// Generate a pre-signed url for an object, the returned url can be shared.
+    ///
     /// ```
     /// match s3.presigned_object() {
     ///     Ok(out) => println!("{:#?}", out),
@@ -55,6 +56,8 @@ pub trait CTClientObject {
     /// }
     /// ```
     fn presigned_object(&self, input: &PresignedObjectRequest) -> Result<String, S3Error>;
+
+    fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error>;
 }
 
 impl CTClientObject for CTClient {
@@ -101,6 +104,10 @@ impl CTClientObject for CTClient {
 
         Ok(url)
     }
+
+    fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error> {
+        unimplemented!()
+    }
 }
 
 use aws_sdk_rust::aws::common::common::Operation;
@@ -114,7 +121,10 @@ pub struct PostObjectRequest {}
 #[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
 pub struct PostObjectOutput {}
 
+/// A trait to additional securely for CTClient.
 pub trait CTClientEncryptionObject {
+
+    ///
     fn put_object_securely(
         &self,
         input: PutObjectRequest,
@@ -126,8 +136,6 @@ pub trait CTClientEncryptionObject {
         input: &GetObjectRequest,
         operation: Option<&mut Operation>,
     ) -> Result<GetObjectOutput, S3Error>;
-
-    fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error>;
 }
 
 impl CTClientEncryptionObject for CTClient {
@@ -147,20 +155,6 @@ impl CTClientEncryptionObject for CTClient {
                 return Err(S3Error::default());
             }
         };
-        /*{
-            let plain_out = match decrypt_payload(
-                self.encrypt_method,
-                &self.key[..],
-                &cipherbody) {
-                Ok(body) => body,
-                Err(err) => {
-                    return Err(S3Error::default());
-                }
-            };
-
-            println!("plaintext {}", String::from_utf8_lossy(&plain_out));
-            println!("plaintext {} cipherbody {}", &plain_out.len(), &cipherbody.len());
-        }*/
 
         let mut request = PutObjectRequest::from(input);
         request.body = Some(&cipherbody);
@@ -206,9 +200,5 @@ impl CTClientEncryptionObject for CTClient {
             }
             Err(err) => Err(err),
         }
-    }
-
-    fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error> {
-        unimplemented!()
     }
 }

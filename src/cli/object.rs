@@ -40,12 +40,12 @@ use prettytable::format::FormatBuilder;
 
 use clap::ArgMatches;
 
-/// High-level OOS object operations commands
-/// Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
-
-/// Additional object operations commands for CTClient.
-// TODO: list 出带前缀“prefix/”的所有对象, 读取这些对象, 删除其他对象 (Pipeline)
-// TODO: cto ls test -p prefix | cto get | cto del --other
+/// 列出对象
+/// * `-p`, `--prefix`: 过滤前缀
+/// * `-q`, `--quiet`: 只显示名字
+/// ```shell
+/// ct-cli object <bucket> ls [-p] [-q]
+/// ```
 pub fn list(bucket: &str, args: &ArgMatches) {
     debug!("List Objects");
     //let version = args.value_of("version").unwrap();
@@ -77,6 +77,10 @@ pub fn list(bucket: &str, args: &ArgMatches) {
     }
 }
 
+/// 新建对象（暂未提供接口）
+/// ```shell
+/// ct-cli object <bucket> new <key> <body>
+/// ```
 pub fn new(bucket: &str, args: &ArgMatches) {
     debug!("Create Object");
     let key = args.value_of("key").unwrap();
@@ -103,6 +107,12 @@ pub fn new(bucket: &str, args: &ArgMatches) {
     }
 }
 
+/// 读取对象，从 `clap` 中解析参数
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+/// ```shell
+/// ct-cli object <bucket> get <key> [-e] [-k]
+/// ```
 pub fn get_args(bucket: &str, args: &ArgMatches) {
     debug!("Get Object");
     let key = args.value_of("key").unwrap();
@@ -130,6 +140,13 @@ pub fn get_args(bucket: &str, args: &ArgMatches) {
     }
 }
 
+/// 下载对象，从 `clap` 中解析参数
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+/// * `-o`, `--output` 储存文件夹
+/// ```shell
+/// ct-cli object <bucket> down [-e] [-k] <keys>... -o <output>
+/// ```
 pub fn down_args(bucket: &str, args: &ArgMatches) {
     debug!("Download Object");
     let keys = args.values_of("keys").unwrap().collect::<Vec<_>>();
@@ -180,9 +197,12 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
     });
 }
 
-/// 下载已上传的 Object到本地（Download）
+/// 读取对象
+/// ```shell
+/// ct-cli object <bucket> get <key>
+/// ```
 pub fn get(bucket: String, key: String) -> Result<GetObjectOutput, S3Error> {
-    debug!("Downland Object");
+    debug!("Get Object");
 
     CTClient::default_client().get_object(
         &GetObjectRequest {
@@ -194,6 +214,12 @@ pub fn get(bucket: String, key: String) -> Result<GetObjectOutput, S3Error> {
     )
 }
 
+/// 读取加密对象
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+/// ```shell
+/// ct-cli object <bucket> get <key> [-e] [-k]
+/// ```
 pub fn get_securely(
     bucket: String,
     key: String,
@@ -219,6 +245,15 @@ pub fn get_securely(
     )
 }
 
+/// 上传对象，从 `clap` 中解析参数
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+/// * `-m`, `--multithread` 多线程上传
+/// * `-p`, `--prefix` 上传到指定前缀
+/// * `-s`, `--storageclass` 储存模式
+/// ```shell
+/// ct-cli object <bucket> up <keys> [-e] [-k] -p [prefix]
+/// ```
 pub fn put_args(bucket: &str, args: &ArgMatches) {
     let keys = args.values_of("keys").unwrap().collect::<Vec<_>>();
     // let path = Path::new(args.value_of("path").unwrap());
@@ -275,15 +310,12 @@ pub fn put_args(bucket: &str, args: &ArgMatches) {
     });
 }
 
-/// 1. 通过 Put方式上传本地文件（文件小于 100M）
-/// 2. 分段上传一个本地文件
-// TODO: 设置 Object上传时的冗余模式，使上传时可实现自定义分片模式
-/// Upload an object to your BUCKET - You can easily upload a file to
-/// S3, or upload directly an InputStream if you know the length of
-/// the data in the stream. You can also specify your own metadata
-/// when uploading to S3, which allows you set a variety of options
-/// like content-type and content-encoding, plus additional metadata
-/// specific to your applications.
+/// 上传对象
+/// * `-p`, `--prefix` 上传到指定前缀
+/// * `-s`, `--storageclass` 储存模式
+/// ```shell
+/// ct-cli object <bucket> up <keys> -p [prefix]
+/// ```
 pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, reverse: bool) {
     debug!("Put Object");
     if path.is_dir() {
@@ -349,6 +381,12 @@ pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, r
     }
 }
 
+/// 多线程上传
+/// * `-p`, `--prefix` 上传到指定前缀
+/// * `-s`, `--storageclass` 储存模式
+/// ```shell
+/// ct-cli object <bucket> up <keys> -m -p [prefix] -s [storageclass]
+/// ```
 pub fn put_multithread(
     bucket: String,
     path: &Path,
@@ -433,7 +471,12 @@ pub fn put_multithread(
     }
 }
 
-// TODO: 设置专属签名，实现自定义加密，使用户拥有独特的签名方式
+/// 上传自定义加密对象，使用户拥有独特的签名方式
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+/// ```shell
+/// ct-cli object <bucket> up <key> [-e] [-k]
+/// ```
 pub fn put_securely(
     bucket: String,
     path: &Path,
@@ -516,10 +559,10 @@ pub fn put_securely(
 
 // TODO: 通过 Post方式上传本地文件（文件小于 100M）
 
-// TODO: 实现多线程上传多个对象
-
-/// 删除已上传的 Object（Delete）
-/// Deletes an object(rm)
+/// 删除对象（Delete）
+/// ```shell
+/// ct-cli object <bucket> rm <keys>
+/// ```
 pub fn delete(bucket: &str, args: &ArgMatches) {
     debug!("Remove Object");
     let count = args.occurrences_of("keys");
@@ -562,9 +605,11 @@ pub fn delete(bucket: &str, args: &ArgMatches) {
     )
 }
 
-/// 分享已上传的 Object（Share）
-/// presign
-// TODO: URL有效期为一周
+/// 分享对象（share, presign）
+/// * `-e`, `--expires`　有效期
+/// ```shell
+/// ct-cli object <bucket> share <keys>
+/// ```
 pub fn share(bucket: &str, args: &ArgMatches) {
     debug!("Share Object");
     let key = args.value_of("key").unwrap();

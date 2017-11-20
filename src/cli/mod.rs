@@ -23,6 +23,8 @@
 #[macro_use]
 mod macros;
 
+/// High-level OOS object operations commands
+/// Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
 pub mod object;
 pub mod bucket;
 pub mod iam;

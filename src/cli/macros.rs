@@ -19,6 +19,7 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+/// 终端表头
 macro_rules! titles {
     ($table:expr, $( $title:expr ), *) => {
         $table.set_titles(
@@ -27,6 +28,7 @@ macro_rules! titles {
     };
 }
 
+/// 终端表格输出
 macro_rules! table {
     ($table:expr, $( $title:expr ), *) => {
         titles!($table, $( $title ), *);
@@ -64,7 +66,7 @@ macro_rules! printstd {
     });
 }
 
-/// Print struct by prettytable to std.
+/// 打印一个列表
 #[macro_export]
 macro_rules! printlist {
     ($s:expr, $key:ident) => ({
@@ -75,6 +77,7 @@ macro_rules! printlist {
     });
 }
 
+/// 打印一个错误
 #[macro_export]
 macro_rules! print_aws_err {
     ($error:expr) => ({

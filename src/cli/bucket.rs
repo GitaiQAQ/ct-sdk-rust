@@ -33,9 +33,14 @@ use prettytable::format::FormatBuilder;
 
 use clap::ArgMatches;
 
-/// List buckets(ls)
+/// 显示仓库列表(ls)
+/// * `-q`, `--quiet`: 只显示名字
+/// ```shell
+/// $ ct-cli bucket ls
+/// ```
+/// * `-q`,`--quiet` 只显示名字
 pub fn list(args: &ArgMatches) {
-    debug!("List Bucket");
+    debug!("List Buckets");
 
     let quiet = args.is_present("quiet");
 
@@ -48,8 +53,10 @@ pub fn list(args: &ArgMatches) {
     }
 }
 
-/// 创建一个 Bucket
-/// Creates an BUCKET(mb)
+/// 创建新仓库(mb)
+/// ```shell
+/// $ ct-cli bucket new <bucket_name>
+/// ```
 pub fn create(args: &ArgMatches) {
     debug!("Create Bucket");
 
@@ -71,9 +78,15 @@ pub fn create(args: &ArgMatches) {
     }
 }
 
-// TODO: 更改创建的 Bucket属性（私有、公有、只读）
+/// 更改属性（私有、公有、只读）
+/// ```shell
+/// $ ct-cli bucket set [-rw] <bucket_name>
+/// ```
+/// * `-r`,`--read` 可公开读取
+/// * `-w`,`--write` 可公开写入
 pub fn acl(args: &ArgMatches) {
-    debug!("acl");
+    debug!("ACL");
+
     let bucket = args.value_of("bucket_name").unwrap();
     let read = args.is_present("read");
     let write = args.is_present("write");
@@ -100,11 +113,21 @@ pub fn acl(args: &ArgMatches) {
     };
 }
 
-/// 删除已创建的 Bucket
-/// Deletes an empty BUCKET.(rb)
-/// A BUCKET must be completely empty of objects and versioned objects before it can be deleted.
-/// However, the --force parameter can be used to delete the non-versioned objects in the BUCKET
-/// before the BUCKET is deleted.
+/// 删除空仓库(rb)
+/// **只能删除**空仓库，但是可以采用 (-f, --force) 自动删除仓库对象，并删除仓库．
+/// ```shell
+/// $ ct-cli bucket rm <buckets>...
+/// ```
+/// 本条命令可以和 `ls -q` 配合使用
+/// ```shell
+/// $ ct-cli bucket rm $(ct-cli bucket ls -q)
+/// ```
+/// *Note: `--force` 暂未实现，可使用如下命令代替*
+// TODO: `--force` 暂未实现
+/// ```shell
+/// $ ct-cli object <bucket> rm $(ct-cli object <bucket> ls -q)
+/// $ ct-cli bucket rm <bucket>
+/// ```
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Bucket");
     let count = args.occurrences_of("buckets");

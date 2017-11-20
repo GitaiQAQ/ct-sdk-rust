@@ -19,19 +19,41 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//! Command Line Interface for CTYun OOS Services
+//! 天翼云命令行接口
 //!
-//! # Getting Started
-//! ## Credentials configure
+//! # 快速开始
+//! ## 初始化 Key
+//!
+//! ### 参数
 //!
 //! ```shell
-//! ct conf
+//! $ ct-cli <some commands> -a <Access Key Id> -s <Secret Access Key>
 //! ```
-//! Other ways:
-//! * Environment variables
+//!
+//! ### 环境变量
+//!
+//! ```shell
+//! $ set AWS_ACCESS_KEY_ID="Access Key Id"
+//! $ set AWS_SECRET_ACCESS_KEY="Secret Access Key"
+//! $ ct-cli <some commands>
+//! ```
+//!
+//! ### 配置文件
+//!
+//! ```shell
+//! $ cat ~/.aws/credentials
+//! [default]
+//! aws_access_key_id = ae2600e3194ec00fbcfb
+//! aws_secret_access_key = c760152a28e608eb5b6d3bac02dd2780bff087cb
+//! $ ct-cli <some commands>
+//! ```
+//!
+//! 其他方式：
+//!
 //! * Shared credentials file
-//! * Config file
+//!
 //! * IAM Role
+//!
 //! ## Object Operations
 
 #[macro_use]
@@ -99,8 +121,9 @@ fn main() {
                 (@arg multithread: -m --multithread "多线程上传")
                 (@arg reverse: -r --reverse "递归子目录")
                 (@arg prefix: -p --prefix +takes_value "前缀")
+                (@arg storage_class: -s --storageclass +takes_value "储存模式")
                 (@arg PASSWORD: -k --password +takes_value "密钥")
-                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式")
+                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）")
             )
             (@subcommand down =>
                 (about: "下载对象")
@@ -108,13 +131,13 @@ fn main() {
                 (@arg dir: -o --output +takes_value "储存文件夹")
                 (@arg multithread: -m --multithread "多线程下载")
                 (@arg PASSWORD: -k --password +takes_value "密钥")
-                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式")
+                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）")
             )
             (@subcommand get =>
                 (about: "读取对象")
                 (@arg key: +required +takes_value "对象 ID")
                 (@arg PASSWORD: -k --password +takes_value "密钥")
-                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式")
+                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）")
             )
             (@subcommand rm =>
                 (about: "删除对象")

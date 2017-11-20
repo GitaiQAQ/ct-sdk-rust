@@ -31,6 +31,12 @@ use colored::*;
 
 use clap::ArgMatches;
 
+/// 显示账户列表(ls)
+/// * `-q`, `--quiet`: 只显示名字
+/// * `-a`, `--all`: 默认只显示非主要账户
+/// ```shell
+/// $ ct-cli account ls
+/// ```
 pub fn list(args: &ArgMatches) {
     debug!("List AccessKey");
     let quiet = args.is_present("quiet");
@@ -60,6 +66,9 @@ pub fn list(args: &ArgMatches) {
 }
 
 /// 创建一组 AK/SK
+/// ```shell
+/// $ ct-cli account new
+/// ```
 pub fn create(args: &ArgMatches) {
     debug!("Create Access Key");
     match CTClient::default_client().create_access_key() {
@@ -78,7 +87,11 @@ pub fn create(args: &ArgMatches) {
     }
 }
 
-/// 删除已有的 AK/SK
+/// 删除 AK/SK
+/// * `-f`, `--force` 默认只删除非主 KEY　（未实现）
+/// ```shell
+/// $ ct-cli account rm <aks>...
+/// ```
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Access Key");
 
@@ -117,7 +130,12 @@ pub fn delete(args: &ArgMatches) {
     )
 }
 
-/// 更改 AK/SK属性（主秘钥/普通秘钥）
+/// 更改 AK/SK属性
+/// * `-s`, `--status` 激活状态
+/// * `-p`, `--is_primary` 主秘钥/普通秘钥
+/// ```shell
+/// $ ct-cli account set <ak> [-s] [-p]
+/// ```
 pub fn update(args: &ArgMatches) {
     debug!("Update Access Key");
 

@@ -20,10 +20,6 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! CTYun OOS SDK
-//! 对　AWS SDK for rust 进行拓展
-//! 增加了
-//! 1. 自定义加密上传
-//! 2. 预签名
 
 use url::Url;
 use chrono::UTC;

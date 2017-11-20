@@ -19,6 +19,7 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+//! Additional API for Bucket Operations
 pub use aws_sdk_rust::aws::s3::acl::CannedAcl::*;
 pub use aws_sdk_rust::aws::s3::bucket::*;
 
