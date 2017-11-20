@@ -3,7 +3,8 @@
 use std::mem;
 use std::ptr;
 
-use ring::aead::{AES_128_GCM, AES_256_GCM, CHACHA20_POLY1305, OpeningKey, SealingKey, open_in_place, seal_in_place};
+use ring::aead::{open_in_place, seal_in_place, AES_128_GCM, AES_256_GCM, CHACHA20_POLY1305,
+                 OpeningKey, SealingKey};
 
 use ct::crypto::{AeadDecryptor, AeadEncryptor};
 use ct::crypto::{CipherResult, CipherType};
@@ -53,7 +54,12 @@ impl RingAeadCipher {
         }
     }
 
-    fn new_variant(t: CipherType, key: &[u8], nonce: &[u8], is_seal: bool) -> RingAeadCryptoVariant {
+    fn new_variant(
+        t: CipherType,
+        key: &[u8],
+        nonce: &[u8],
+        is_seal: bool,
+    ) -> RingAeadCryptoVariant {
         macro_rules! seal_or_open {
             ( $item:ident, $key:ident, $crypt:ident ) => {
                 RingAeadCryptoVariant::$item($key::new(&$crypt, key).unwrap(), Bytes::from(nonce))
@@ -123,11 +129,13 @@ impl AeadDecryptor for RingAeadCipher {
                     Ok(())
                 }
                 Err(err) => {
-                    error!("AEAD decrypt failed, nonce={:?}, input={:?}, tag={:?}, err: {:?}",
-                           ByteStr::new(nonce),
-                           ByteStr::new(input),
-                           ByteStr::new(tag),
-                           err);
+                    error!(
+                        "AEAD decrypt failed, nonce={:?}, input={:?}, tag={:?}, err: {:?}",
+                        ByteStr::new(nonce),
+                        ByteStr::new(input),
+                        ByteStr::new(tag),
+                        err
+                    );
                     Err(Error::AeadDecryptFailed)
                 }
             }

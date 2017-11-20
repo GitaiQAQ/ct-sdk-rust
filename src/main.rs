@@ -53,7 +53,7 @@ mod cli;
 
 #[allow(unused_variables)]
 fn main() {
-    let matches: ArgMatches = clap_app!(myapp =>
+    let matches: ArgMatches = clap_app!(ct =>
         (version: "0.1")
         (author: "Gitai<i@gitai.me>")
         (about: "Does awesome things")
@@ -99,23 +99,22 @@ fn main() {
                 (@arg multithread: -m --multithread "多线程上传")
                 (@arg reverse: -r --reverse "递归子目录")
                 (@arg prefix: -p --prefix +takes_value "前缀")
-                (@arg securely: -s --securely +takes_value "加密")
+                (@arg PASSWORD: -k --password +takes_value "密钥")
+                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式")
             )
-            /*(@subcommand get =>
-                (about: "读取对象")
-                (@arg bucket_name: +required +takes_value "储存仓库")
-                (@arg key: +required +takes_value "对象唯一 ID")
-            )*/
             (@subcommand down =>
                 (about: "下载对象")
                 (@arg keys: +required +multiple +takes_value "对象 ID 列表")
                 (@arg dir: -o --output +takes_value "储存文件夹")
-                (@arg securely: -s --securely +takes_value "解密")
+                (@arg multithread: -m --multithread "多线程下载")
+                (@arg PASSWORD: -k --password +takes_value "密钥")
+                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式")
             )
             (@subcommand get =>
                 (about: "读取对象")
                 (@arg key: +required +takes_value "对象 ID")
-                (@arg securely: -s --securely +takes_value "解密")
+                (@arg PASSWORD: -k --password +takes_value "密钥")
+                (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式")
             )
             (@subcommand rm =>
                 (about: "删除对象")

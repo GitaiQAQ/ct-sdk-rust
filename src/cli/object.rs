@@ -107,18 +107,20 @@ pub fn get_args(bucket: &str, args: &ArgMatches) {
     debug!("Get Object");
     let key = args.value_of("key").unwrap();
 
-    match match (args.value_of("securely"), args.is_present("multithread")) {
-        (Some(password), true) => unimplemented!(),
-        (Some(password), false) => get_securely(
+    match match (args.value_of("PASSWORD"), args.value_of("ENCRYPT_METHOD")) {
+        (Some(password), Some(method)) => get_securely(
             bucket.to_string(),
             key.to_string(),
+            method.to_string(),
             password.to_string(),
         ),
-        (None, true) => unimplemented!(),
-        _ => get(
+        (Some(password), None) => get_securely(
             bucket.to_string(),
             key.to_string(),
+            "".to_string(),
+            password.to_string(),
         ),
+        _ => get(bucket.to_string(), key.to_string()),
     } {
         Ok(out) => println!(
             "+--[ START ]----+\n{}\n+--[  END  ]----+",
@@ -137,29 +139,30 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
 
     keys.iter().for_each(|key| {
         print!("{}\t", key);
-        match match (args.value_of("securely"), args.is_present("multithread")) {
-            (Some(password), true) => unimplemented!(),
-            (Some(password), false) => get_securely(
+        match match (
+            (args.value_of("PASSWORD"), args.value_of("ENCRYPT_METHOD")),
+            args.is_present("multithread"),
+        ) {
+            ((Some(password), Some(method)), true) => unimplemented!(),
+            ((Some(password), Some(method)), false) => get_securely(
                 bucket.to_string(),
                 key.to_string(),
+                method.to_string(),
                 password.to_string(),
             ),
-            (None, true) => unimplemented!(),
-            _ => get(
-                bucket.to_string(),
-                key.to_string(),
-            ),
+            ((None, None), true) => unimplemented!(),
+            _ => get(bucket.to_string(), key.to_string()),
         } {
             Ok(out) => {
                 let mut file = match File::create(Path::new(format!("{}{}", output, key).as_str()))
-                    {
-                        Ok(file) => file,
-                        Err(err) => {
-                            debug!("{:#?}", err);
-                            println!("{}", " ✗ ".red().bold());
-                            return;
-                        }
-                    };
+                {
+                    Ok(file) => file,
+                    Err(err) => {
+                        debug!("{:#?}", err);
+                        println!("{}", " ✗ ".red().bold());
+                        return;
+                    }
+                };
 
                 match file.write_all(out.get_body()) {
                     Ok(output) => {
@@ -178,9 +181,7 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
 }
 
 /// 下载已上传的 Object到本地（Download）
-pub fn get(bucket: String, key: String)
-    -> Result<GetObjectOutput, S3Error>
-{
+pub fn get(bucket: String, key: String) -> Result<GetObjectOutput, S3Error> {
     debug!("Downland Object");
 
     CTClient::default_client().get_object(
@@ -193,12 +194,22 @@ pub fn get(bucket: String, key: String)
     )
 }
 
-pub fn get_securely(bucket: String, key: String, password: String)
-    -> Result<GetObjectOutput, S3Error>
-{
+pub fn get_securely(
+    bucket: String,
+    key: String,
+    method: String,
+    password: String,
+) -> Result<GetObjectOutput, S3Error> {
     debug!("Downland Object");
-    CTClient::default_securely_client(password)
-        .get_object_securely(
+
+    let method = match method.parse() {
+        Ok(m) => m,
+        Err(err) => {
+            panic!("Does not support {:?} method: {:?}", method, err);
+        }
+    };
+
+    CTClient::default_securely_client(password, method).get_object_securely(
         &GetObjectRequest {
             bucket: bucket.to_string(),
             key: key.to_string(),
@@ -222,17 +233,31 @@ pub fn put_args(bucket: &str, args: &ArgMatches) {
     };
 
     keys.iter().for_each(|key| {
-        match (args.value_of("securely"), args.is_present("multithread")) {
-            (Some(password), true) => unimplemented!(),
-            (Some(password), false) => put_securely(
+        match (
+            (args.value_of("PASSWORD"), args.value_of("ENCRYPT_METHOD")),
+            args.is_present("multithread"),
+        ) {
+            ((Some(password), Some(method)), true) => unimplemented!(),
+            ((Some(password), None), true) => unimplemented!(),
+            ((Some(password), Some(method)), false) => put_securely(
                 bucket.to_string(),
                 Path::new(key),
                 prefix.to_string(),
+                method.to_string(),
                 password.to_string(),
                 storage_class.clone(),
                 reverse,
             ),
-            (None, true) => put_multithread(
+            ((Some(password), None), false) => put_securely(
+                bucket.to_string(),
+                Path::new(key),
+                prefix.to_string(),
+                "".to_string(),
+                password.to_string(),
+                storage_class.clone(),
+                reverse,
+            ),
+            ((None, None), true) => put_multithread(
                 bucket.to_string(),
                 Path::new(key),
                 prefix.to_string(),
@@ -413,6 +438,7 @@ pub fn put_securely(
     bucket: String,
     path: &Path,
     prefix: String,
+    method: String,
     password: String,
     storage_class: String,
     reverse: bool,
@@ -426,6 +452,7 @@ pub fn put_securely(
                         bucket.clone(),
                         entry.path().as_ref(),
                         prefix.clone(),
+                        method.to_string(),
                         password.clone(),
                         storage_class.clone(),
                         reverse,
@@ -455,6 +482,13 @@ pub fn put_securely(
         Err(err) => println!("{}", err),
     }
 
+    let method = match method.parse() {
+        Ok(m) => m,
+        Err(err) => {
+            panic!("Does not support {:?} method: {:?}", method, err);
+        }
+    };
+
     let mut request = PutObjectRequest::default();
     request.bucket = bucket.to_string();
     request.storage_class = match storage_class.is_empty() {
@@ -468,7 +502,7 @@ pub fn put_securely(
     // Compute hash - Hash is slow
     let hash = md5(request.body.unwrap());
 
-    match CTClient::default_securely_client(password).put_object_securely(request, None) {
+    match CTClient::default_securely_client(password, method).put_object_securely(request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
             println!("{}", " ✓ ".green().bold());

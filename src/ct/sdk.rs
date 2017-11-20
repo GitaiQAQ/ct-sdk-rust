@@ -27,7 +27,7 @@
 
 use url::Url;
 use chrono::UTC;
-use md5::{Md5, Digest};
+use md5::{Digest, Md5};
 
 use hyper::client::Client;
 use hyper::header::Headers;
@@ -201,12 +201,18 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
 /// encryption is done using a one-time randomly generated content encryption
 /// key (CEK) per S3 object.
 use std::ops::Deref;
+use bytes::{BufMut, Bytes, BytesMut};
 
 /// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
 
 pub struct CTClient {
     p: S3Client<DefaultCredentialsProvider, Client>,
-    key: Option<String>,
+    /// Encryption password (key)
+    password: String,
+    /// Encryption type (method)
+    method: CipherType,
+    /// Encryption key
+    enc_key: Bytes,
 }
 
 impl Deref for CTClient {
@@ -216,10 +222,13 @@ impl Deref for CTClient {
     }
 }
 
+use ct::crypto_io::CipherType;
+
 impl CTClient {
     pub fn new(
         credentials_provider: DefaultCredentialsProvider,
-        securely_key: Option<String>,
+        pwd: Option<String>,
+        method: Option<CipherType>,
     ) -> CTClient {
         // Init new s3 connect
         // V4 is the default signature for AWS. However, other systems also use V2.
@@ -238,23 +247,52 @@ impl CTClient {
             None,
         );
 
+        let method = match method {
+            Some(method) => method,
+            None => CipherType::Aes256Cfb
+        };
+
+        let pwd = pwd.unwrap_or_default();
+
+        let enc_key = method.bytes_to_key(pwd.as_bytes());
+        trace!("Initialize config with pwd: {:?}, key: {:?}", pwd, enc_key);
+
         CTClient {
-            key: securely_key,
+            password: pwd,
+            method: method,
+            enc_key: enc_key,
             p: S3Client::new(credentials_provider, endpoint),
         }
+    }
+
+    /// Get encryption key
+    pub fn key(&self) -> &[u8] {
+        &self.enc_key[..]
+    }
+
+    // Get password
+    //pub fn password(&self) -> &str {
+    //    &self.password[..]
+    //}
+
+    /// Get method
+    pub fn method(&self) -> CipherType {
+        self.method
     }
 
     /// Set the CTYun OOS Config default
     pub fn default_client() -> Self {
         let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
-        CTClient::new(credentials_provider, None)
+        CTClient::new(credentials_provider, None, None)
     }
 
     /// Set the CTYun OOS Config default
     #[allow(unused_variables)]
-    pub fn default_securely_client(key: String) -> Self {
+    pub fn default_securely_client(pwd: String, encrypt_method: CipherType) -> Self {
         let credentials_provider = DefaultCredentialsProvider::new(None).unwrap();
-        CTClient::new(credentials_provider, Some(key))
+        CTClient::new(credentials_provider,
+                      Some(pwd),
+                      Some(encrypt_method))
     }
 }
 

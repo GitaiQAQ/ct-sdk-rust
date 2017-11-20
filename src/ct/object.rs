@@ -20,7 +20,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! Additional API for Object Operations
-use md5::{Md5, Digest};
+use md5::{Digest, Md5};
 use std::iter::repeat;
 use rustc_serialize::base64::{ToBase64, STANDARD};
 
@@ -138,9 +138,10 @@ impl CTClientEncryptionObject for CTClient {
     ) -> Result<PutObjectOutput, S3Error> {
         let plaintext = input.body.unwrap();
         let cipherbody = match encrypt_payload(
-            CipherType::Aes256Cfb,
-            &CipherType::Aes256Cfb.bytes_to_key("CipherType::Aes2".as_bytes())[..],
-            input.body.unwrap()) {
+            self.method(),
+            self.key(),
+            input.body.unwrap(),
+        ) {
             Ok(body) => body,
             Err(err) => {
                 return Err(S3Error::default());
@@ -148,8 +149,8 @@ impl CTClientEncryptionObject for CTClient {
         };
         /*{
             let plain_out = match decrypt_payload(
-                CipherType::Aes256Cfb,
-                &CipherType::Aes256Cfb.bytes_to_key("CipherType::Aes2".as_bytes())[..],
+                self.encrypt_method,
+                &self.key[..],
                 &cipherbody) {
                 Ok(body) => body,
                 Err(err) => {
@@ -186,9 +187,10 @@ impl CTClientEncryptionObject for CTClient {
                 {
                     let cipherbody = &output.get_body();
                     plaintext = match decrypt_payload(
-                        CipherType::Aes256Cfb,
-                        &CipherType::Aes256Cfb.bytes_to_key("CipherType::Aes2".as_bytes())[..],
-                        &cipherbody) {
+                        self.method(),
+                        &self.key(),
+                        &cipherbody,
+                    ) {
                         Ok(body) => body,
                         Err(err) => {
                             return Err(S3Error::default());

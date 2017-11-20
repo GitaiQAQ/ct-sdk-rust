@@ -23,7 +23,7 @@
 use std::io;
 
 pub use ct::crypto::CipherType;
-use ct::crypto::{ self, CipherCategory, CryptoMode};
+use ct::crypto::{self, CipherCategory, CryptoMode};
 use ct::crypto::StreamCipher;
 
 

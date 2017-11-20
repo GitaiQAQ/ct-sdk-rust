@@ -58,22 +58,22 @@
 
 #![crate_type = "lib"]
 extern crate aws_sdk_rust;
+extern crate byte_string;
+extern crate byteorder;
+extern crate bytes;
 extern crate chrono;
+extern crate digest;
 extern crate hyper;
 #[macro_use]
 extern crate log;
 extern crate md_5 as md5;
-extern crate bytes;
-extern crate ring;
-extern crate rand;
 extern crate openssl;
+extern crate rand;
+extern crate ring;
 extern crate rustc_serialize;
+extern crate typenum;
 extern crate url;
 extern crate xml;
-extern crate typenum;
-extern crate digest;
-extern crate byteorder;
-extern crate byte_string;
 
 pub mod ct;
 

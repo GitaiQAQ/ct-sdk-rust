@@ -35,13 +35,14 @@ pub fn new_aead_encryptor(t: CipherType, key: &[u8], nonce: &[u8]) -> BoxAeadEnc
     assert!(t.category() == CipherCategory::Aead);
 
     match t {
-        CipherType::Aes128Gcm |
-        CipherType::Aes256Gcm |
-        CipherType::ChaCha20Poly1305 => Box::new(RingAeadCipher::new(t, key, nonce, true)),
+        CipherType::Aes128Gcm | CipherType::Aes256Gcm | CipherType::ChaCha20Poly1305 => {
+            Box::new(RingAeadCipher::new(t, key, nonce, true))
+        }
 
         #[cfg(feature = "miscreant")]
-        CipherType::Aes128PmacSiv |
-        CipherType::Aes256PmacSiv => Box::new(MiscreantCipher::new(t, key, nonce)),
+        CipherType::Aes128PmacSiv | CipherType::Aes256PmacSiv => {
+            Box::new(MiscreantCipher::new(t, key, nonce))
+        }
 
         _ => unreachable!(),
     }
@@ -52,13 +53,14 @@ pub fn new_aead_decryptor(t: CipherType, key: &[u8], nonce: &[u8]) -> BoxAeadDec
     assert!(t.category() == CipherCategory::Aead);
 
     match t {
-        CipherType::Aes128Gcm |
-        CipherType::Aes256Gcm |
-        CipherType::ChaCha20Poly1305 => Box::new(RingAeadCipher::new(t, key, nonce, false)),
+        CipherType::Aes128Gcm | CipherType::Aes256Gcm | CipherType::ChaCha20Poly1305 => {
+            Box::new(RingAeadCipher::new(t, key, nonce, false))
+        }
 
         #[cfg(feature = "miscreant")]
-        CipherType::Aes128PmacSiv |
-        CipherType::Aes256PmacSiv => Box::new(MiscreantCipher::new(t, key, nonce)),
+        CipherType::Aes128PmacSiv | CipherType::Aes256PmacSiv => {
+            Box::new(MiscreantCipher::new(t, key, nonce))
+        }
 
         _ => unreachable!(),
     }
