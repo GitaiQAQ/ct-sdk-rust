@@ -32,11 +32,16 @@ use colored::*;
 use clap::ArgMatches;
 
 /// 显示账户列表(ls)
-/// * `-q`, `--quiet`: 只显示名字
-/// * `-a`, `--all`: 默认只显示非主要账户
+///
 /// ```shell
 /// $ ct-cli account ls
 /// ```
+/// ### 选项
+/// * `-q`, `--quiet`: 只显示名字
+/// * `-a`, `--all`: 默认只显示非主要账户
+///
+/// ### 截图
+/// ![iam-ls.png] (https://i.loli.net/2017/11/21/5a13ad0126805.png)
 pub fn list(args: &ArgMatches) {
     debug!("List AccessKey");
     let quiet = args.is_present("quiet");
@@ -61,14 +66,18 @@ pub fn list(args: &ArgMatches) {
                 true => printlist!(out, access_key_id),
             }
         }
-        Err(err) => println!("{:?}", err),
+        Err(err) => info!("{:?}", err),
     }
 }
 
 /// 创建一组 AK/SK
+///
 /// ```shell
 /// $ ct-cli account new
 /// ```
+///
+/// ### 截图
+/// ![iam-new.png](https://i.loli.net/2017/11/21/5a13ad020a705.png)
 pub fn create(args: &ArgMatches) {
     debug!("Create Access Key");
     match CTClient::default_client().create_access_key() {
@@ -82,16 +91,21 @@ pub fn create(args: &ArgMatches) {
         ),
         Err(err) => {
             debug!("{:#?}", err);
-            println!("{}", " ✗ ".red().bold());
+            info!("{}", " ✗ ".red().bold());
         }
     }
 }
 
 /// 删除 AK/SK
-/// * `-f`, `--force` 默认只删除非主 KEY　（未实现）
+///
 /// ```shell
 /// $ ct-cli account rm <aks>...
 /// ```
+/// ### 选项
+/// * `-f`, `--force` 默认只删除非主 KEY　（未实现）
+///
+/// ### 截图
+/// ![iam-rm.png](https://i.loli.net/2017/11/21/5a13ad0203dc0.png)
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Access Key");
 
@@ -105,24 +119,23 @@ pub fn delete(args: &ArgMatches) {
     let mut error = 0;
 
     access_keys.iter().for_each(|access_key| {
-        print!("{}", access_key);
         match ct.delete_access_key(&DeleteAccessKeyRequest {
             access_key_id: access_key.to_string(),
         }) {
             Ok(out) => {
                 debug!("{:#?}", out);
-                println!("{}", " ✓ ".green().bold());
+                info!("{}\t{}", " ✓ ".green().bold(), access_key);
                 success += 1;
             }
             Err(err) => {
                 debug!("{:#?}", err);
-                println!("{}", " ✗ ".red().bold());
+                info!("{}\t{}", " ✗ ".red().bold(), access_key);
                 error += 1;
             }
         }
     });
 
-    println!(
+    info!(
         "\nAll: {}, Success: {}, Error: {}",
         count,
         format!("{}", success).green(),
@@ -131,11 +144,16 @@ pub fn delete(args: &ArgMatches) {
 }
 
 /// 更改 AK/SK属性
-/// * `-s`, `--status` 激活状态
-/// * `-p`, `--is_primary` 主秘钥/普通秘钥
+///
 /// ```shell
 /// $ ct-cli account set <ak> [-s] [-p]
 /// ```
+/// ### 选项
+/// * `-s`, `--status` 激活状态
+/// * `-p`, `--is_primary` 主秘钥/普通秘钥
+///
+/// ### 截图
+/// ![iam-update.png](https://i.loli.net/2017/11/21/5a13adf92bfb2.png)
 pub fn update(args: &ArgMatches) {
     debug!("Update Access Key");
 
@@ -143,9 +161,8 @@ pub fn update(args: &ArgMatches) {
     let status = args.is_present("status");
     let is_primary = args.is_present("is_primary");
 
-    print!("{}", access_key_id);
     match CTClient::default_client().update_access_key(&UpdateAccessKeyRequest {
-        access_key_id,
+        access_key_id: access_key_id.clone(),
         status: match status {
             true => Some(Status::Active),
             false => Some(Status::Inactive),
@@ -154,11 +171,11 @@ pub fn update(args: &ArgMatches) {
     }) {
         Ok(out) => {
             debug!("{:#?}", out);
-            println!("{}", " ✓ ".green().bold());
+            info!("{}\t{}", " ✓ ".green().bold(), access_key_id);
         }
         Err(err) => {
             debug!("{:#?}", err);
-            println!("{}", " ✗ ".red().bold());
+            info!("{}\t{}", " ✗ ".red().bold(), access_key_id);
         }
     }
 }

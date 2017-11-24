@@ -59,6 +59,7 @@ pub trait CTSignedRequest<'a> {
     fn add_header_raw(&mut self, key: &str, value: &str);
     /// Generate Url from a SignedRequest
     fn gen_url(&mut self) -> String;
+    fn url(&mut self) -> String;
 }
 
 impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
@@ -155,6 +156,22 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
         }
     }
 
+    fn url(&mut self) -> String {
+        let epp = self.endpoint().clone().endpoint.unwrap().port();
+        let port_str = match epp {
+            Some(port) => format!(":{}", port),
+            _ => "".to_string(),
+        };
+
+        format!(
+            "{}://{}{}{}",
+            self.endpoint_scheme(),
+            self.hostname(),
+            port_str,
+            self.path()
+        ).to_string()
+    }
+
     fn gen_url(&mut self) -> String {
         //self.endpoint()
         //println!("{:#?} {} {}", self, creds.aws_access_key_id(), self.signature);
@@ -198,6 +215,7 @@ impl<'a> CTSignedRequest<'a> for SignedRequest<'a> {
 /// key (CEK) per S3 object.
 use std::ops::Deref;
 use bytes::{BufMut, Bytes, BytesMut};
+use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 
 /// A trait to set the CTYun OOS Config default, like SignV2 and Endpoint.
 

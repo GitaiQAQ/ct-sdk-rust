@@ -6,9 +6,9 @@
 ## List of features
 
 * Rust library for call API operations which each return response data and a possible error.
-* Supports encrypted and non encrypted formats
+* Supports client-side-encrypt
 * Multi-threaded upload and download
-* Command line decrypt utility, mostly useful for debugging
+* Command line interface, mostly useful for debugging
 
 ## Library usage
 
@@ -21,44 +21,21 @@ ct-sdk = "0.1"
 
 ## Example
 
-A basic example (from `examples/restore.rs`):
-
 ```rust
 extern crate output;
 extern crate ct_sdk;
 
-use std::env;
-use std::ffi::OsString;
-use std::io;
+use ct_sdk::ct::sdk::CTClient;
+use ct_sdk::ct::s3::bucket::*;
 
-fn main () {
-
-	let output =
-		output::open ();
-
-	let arguments: Vec <OsString> =
-		env::args_os ().collect ();
-
-	let stdout =
-		io::stdout ();
-
-	let mut stdout_lock =
-		stdout.lock ();
-
-	repository.restore (
-		& output,
-		arguments [3],
-		& mut stdout_lock,
-	).unwrap ();
-
+fn main() {
+    match CTClient::default_client().list_buckets() {
+        Ok(out) => prinln!("{:#?}", out),
+        Err(err) => prinln!("{:#?}", err),
+    }
 }
 ```
 
-## Command usage
+参考
 
-### List Buckets
-
-
-```sh
-ct list 
-```
+* shadowsocks-rust

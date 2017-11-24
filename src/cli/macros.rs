@@ -73,7 +73,7 @@ macro_rules! printlist {
         $s
         .iter()
         .for_each(|elt|
-            println!("{}", elt.$key));
+            info!("{}", elt.$key));
     });
 }
 

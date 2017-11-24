@@ -34,11 +34,15 @@ use prettytable::format::FormatBuilder;
 use clap::ArgMatches;
 
 /// 显示仓库列表(ls)
+///
 /// * `-q`, `--quiet`: 只显示名字
 /// ```shell
 /// $ ct-cli bucket ls
 /// ```
+///
+/// ### 选项
 /// * `-q`,`--quiet` 只显示名字
+///
 pub fn list(args: &ArgMatches) {
     debug!("List Buckets");
 
@@ -54,9 +58,13 @@ pub fn list(args: &ArgMatches) {
 }
 
 /// 创建新仓库(mb)
+///
 /// ```shell
 /// $ ct-cli bucket new <bucket_name>
 /// ```
+///
+/// ### 截图
+/// ![bucket-new.png](https://i.loli.net/2017/11/21/5a13b0360ea9b.png)
 pub fn create(args: &ArgMatches) {
     debug!("Create Bucket");
 
@@ -79,11 +87,16 @@ pub fn create(args: &ArgMatches) {
 }
 
 /// 更改属性（私有、公有、只读）
+///
 /// ```shell
 /// $ ct-cli bucket set [-rw] <bucket_name>
 /// ```
+/// ### 选项
 /// * `-r`,`--read` 可公开读取
 /// * `-w`,`--write` 可公开写入
+///
+/// ### 截图
+/// ![bucket-acl.png](https://i.loli.net/2017/11/21/5a13b0353cce4.png)
 pub fn acl(args: &ArgMatches) {
     debug!("ACL");
 
@@ -114,20 +127,27 @@ pub fn acl(args: &ArgMatches) {
 }
 
 /// 删除空仓库(rb)
+///
 /// **只能删除**空仓库，但是可以采用 (-f, --force) 自动删除仓库对象，并删除仓库．
 /// ```shell
 /// $ ct-cli bucket rm <buckets>...
 /// ```
+///
 /// 本条命令可以和 `ls -q` 配合使用
 /// ```shell
 /// $ ct-cli bucket rm $(ct-cli bucket ls -q)
 /// ```
+///
+/// ### 选项
 /// *Note: `--force` 暂未实现，可使用如下命令代替*
 // TODO: `--force` 暂未实现
 /// ```shell
 /// $ ct-cli object <bucket> rm $(ct-cli object <bucket> ls -q)
 /// $ ct-cli bucket rm <bucket>
 /// ```
+///
+/// ### 截图
+/// ![bucket-rm.png](https://i.loli.net/2017/11/21/5a13b0360db67.png)
 pub fn delete(args: &ArgMatches) {
     debug!("Delete Bucket");
     let count = args.occurrences_of("buckets");
@@ -147,17 +167,17 @@ pub fn delete(args: &ArgMatches) {
         }) {
             Ok(output) => {
                 debug!("{:#?}", output);
-                println!("{}", " ✓ ".green().bold());
+                info!("{}", " ✓ ".green().bold());
                 success += 1;
             }
             Err(err) => {
-                println!("{}", " ✗ ".red().bold());
+                info!("{}", " ✗ ".red().bold());
                 error += 1;
             }
         }
     });
 
-    println!(
+    info!(
         "\nAll: {}, Success: {}, Error: {}",
         count,
         format!("{}", success).green(),

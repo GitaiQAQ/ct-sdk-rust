@@ -22,6 +22,11 @@
 //! Additional API for Object Operations
 use md5::{Digest, Md5};
 use std::iter::repeat;
+use std::io::Write;
+use openssl::sign::Signer;
+use openssl::hash::MessageDigest;
+use openssl::pkey::PKey;
+use rustc_serialize::json;
 use rustc_serialize::base64::{ToBase64, STANDARD};
 
 use aws_sdk_rust::aws::common::signature::SignedRequest;
@@ -30,6 +35,10 @@ pub use aws_sdk_rust::aws::common::credentials::AwsCredentialsProvider;
 use aws_sdk_rust::aws::s3::bucket::*;
 pub use aws_sdk_rust::aws::s3::object::*;
 use aws_sdk_rust::aws::errors::s3::S3Error;
+
+use hyper::Server;
+use hyper::server::{Request, Response};
+use chrono::{self, UTC, Duration};
 
 use ct::sdk::CTClient;
 use ct::sdk::CTSignedRequest;
@@ -106,16 +115,82 @@ impl CTClientObject for CTClient {
     }
 
     fn post_object(&self, input: &PostObjectRequest) -> Result<PostObjectOutput, S3Error> {
-        unimplemented!()
+        let date_str = UTC::now() + match input.expires {
+            Some(ref h) => Duration::days(h.parse::<i64>().unwrap()),
+            None => Duration::days(1),
+        };
+
+        let url;
+        let key;
+        let aws_access_key_id;
+        let policy;
+        let signature;
+
+        {
+
+            url = format!("{}://{}", "http", self.hostname(Some(&input.bucket)));
+            key = &input.key;
+            {
+
+                aws_access_key_id = self.credentials_provider().credentials().unwrap().aws_access_key_id().to_string();
+            }
+
+            signature = {
+                let hmac_pkey = PKey::hmac(self.credentials_provider.credentials().unwrap().aws_secret_access_key().as_bytes()).unwrap();
+                let mut hmac = Signer::new(MessageDigest::sha1(), &hmac_pkey).unwrap();
+
+                policy = format!(r#"
+                    {{
+                        "expiration":"{:?}",
+                        "conditions":[
+                            {{"bucket": "{}"}},
+                            ["starts-with","$key",""]
+                        ]
+                    }}
+                "#, date_str, input.bucket).as_bytes().to_base64(STANDARD);
+                let _ = hmac.write_all(&policy.clone().into_bytes());
+                hmac.finish().unwrap().to_base64(STANDARD)
+            };
+        }
+
+
+        let body = format!(r#"
+                <html>
+                  <head>
+                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+                  </head>
+                  <body>
+                  <form action="{}" method="post" enctype="multipart/form-data">
+                    Key: <input type="input" name="key" value="{}" />
+                    <br/>
+                    <input type="hidden" name="AWSAccessKeyId" value="{}" />
+                    <input type="hidden" name="Policy" value="{}" />
+                    <input type="hidden" name="Signature" value="{}" />
+                    File: <input type="file" name="file"/>
+                    <br/>
+                    <input type="submit" name="submit" value="Upload" />
+                  </form>
+                </html>
+            "#, &url, &key, &aws_access_key_id, &policy, &signature).to_string();
+
+        let _listening = Server::http("127.0.0.1:3000").unwrap()
+            .handle(move |_: Request, res: Response|res.send(body.as_bytes()).unwrap());
+        println!("Open http://127.0.0.1:3000 in browser for upload file");
+        Ok(PostObjectOutput{})
     }
+
+
 }
 
 use aws_sdk_rust::aws::common::common::Operation;
 
-
 //#[derive(Debug, Default)]
 #[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]
-pub struct PostObjectRequest {}
+pub struct PostObjectRequest {
+    pub bucket: BucketName,
+    pub key: ObjectKey,
+    pub expires: Option<Expires>,
+}
 
 //#[derive(Debug, Default)]
 #[derive(Debug, Default, Clone, RustcDecodable, RustcEncodable)]

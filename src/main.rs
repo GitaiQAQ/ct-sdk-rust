@@ -48,13 +48,50 @@
 //! $ ct-cli <some commands>
 //! ```
 //!
-//! 其他方式：
+//! ### 其他方式：
 //!
 //! * Shared credentials file
 //!
 //! * IAM Role
 //!
-//! ## Object Operations
+//! ## 详细内容
+//!
+//! * [IAM](./cli/iam/)
+//! * [Bucket](./cli/bucket/)
+//! * [Object](./cli/object/)
+//!
+//! ## Check Point
+//!
+//! ### 初级 (2')
+//!
+//! - [X] [创建一组 AK/SK](./cli/iam/fn.create.html)
+//! - [X] [更改 AK/SK 属性（主秘钥/普通秘钥）](./cli/iam/fn.update.html)
+//! - [X] [删除已有的 AK/SK](./cli/iam/fn.delete.html)
+//!
+//! - [X] [创建一个 Bucket](./cli/bucket/fn.create.html)
+//! - [X] [更改创建的 Bucket 属性（私有、公有、只读）](./cli/bucket/fn.acl.html)
+//! - [X] [删除已创建的 Bucket](./cli/bucket/fn.delete.html)
+//!
+//! - [X] [通过 Put 方式上传本地文件（文件小于100M）](./cli/object/fn.put.html)
+//! - [X] [下载已上传的 Object 到本地 （Download）](./cli/object/fn.down_args.html)
+//! - [X] [分享已上传的 Object（Share），URL 有效期为一周](./cli/object/fn.share.html)
+//! - [X] [删除已上传的 Object（Delete）](./cli/object/fn.delete.html)
+//!
+//! ### 中级 (15')
+//!
+//! - [X] [分段上传一个本地文件](./cli/object/fn.put_multipart.html)
+//! - [X] [设置专属签名，实现自定义加密，使用户拥有独特的签名方式](./cli/object/fn.put_securely.html)
+//!
+//! ### 高级 (20')
+//!
+//! - [X] [设置 Object 上传时的冗余模式，使上传时可实现自定义分片模式](./cli/object/fn.put.html)
+//! - [X] [通过 Post 方式上传本地文件（文件小于100M）](./cli/object/fn.post.html)
+//!
+//! ### 提高题 (20')
+//!
+//! - [X] [实现多线程上传多个对象](./cli/object/fn.put_multithread.html)
+//! - [X] [list 出带前缀 `prefix/` 的所有对象，读取这些对象,删除其他对象](./cli/object/fn.delete.html)
+//!
 
 #[macro_use]
 extern crate clap;
@@ -67,11 +104,11 @@ extern crate prettytable;
 extern crate rustc_serialize;
 
 use std::env;
-use env_logger::LogBuilder;
-use log::{LogLevel, LogLevelFilter};
+use env_logger::{LogBuilder, LogTarget};
+use log::{LogLevel, LogLevelFilter, LogRecord};
 use clap::ArgMatches;
 
-mod cli;
+pub mod cli;
 
 #[allow(unused_variables)]
 fn main() {
@@ -121,9 +158,15 @@ fn main() {
                 (@arg multithread: -m --multithread "多线程上传")
                 (@arg reverse: -r --reverse "递归子目录")
                 (@arg prefix: -p --prefix +takes_value "前缀")
+                (@arg multipart: --mp "分片上传")
                 (@arg storage_class: -s --storageclass +takes_value "储存模式")
                 (@arg PASSWORD: -k --password +takes_value "密钥")
                 (@arg ENCRYPT_METHOD: -e --encryptmethod +takes_value "加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）")
+            )
+            (@subcommand post =>
+                (about: "POST 上传对象")
+                (@arg key: +required +takes_value "对象唯一 ID")
+                (@arg expires: -e --expires +takes_value "时间（1500s）")
             )
             (@subcommand down =>
                 (about: "下载对象")
@@ -171,17 +214,30 @@ fn main() {
         )
         (@arg aws_access_key_id: -a --ak +takes_value "Access Key Id")
         (@arg aws_secret_access_key: -s --sk +takes_value "Secret Access Key")
+        (@arg hidden: --hidden "隐藏输出信息")
         (@arg verbosity: -v +multiple "设置调试等级")
     ).get_matches();
 
-    LogBuilder::new()
-        .parse(match matches.occurrences_of("verbosity") {
-            1 => "ct_cli=Debug",
-            2 => "ct_cli=Debug, aws_sdk_rust=Debug",
-            3 => "Trace",
-            _ => "Error",
-        })
-        .init();
+    if !matches.is_present("hidden") {
+        let format = |record: &LogRecord| {
+            match record.level() {
+                LogLevel::Info => format!("{}", record.args()),
+                _ => format!("{} - {}", record.level(), record.args()),
+            }
+
+        };
+        LogBuilder::new()
+            .target(LogTarget::Stdout)
+            .format(format)
+            .parse(match matches.occurrences_of("verbosity") {
+                1 => "ct_cli=Debug",
+                2 => "ct_cli=Debug, aws_sdk_rust=Debug",
+                3 => "Trace",
+                _ => "ct_cli=Info,Error",
+            })
+            .init();
+    }
+
 
     match (
         matches.value_of("aws_access_key_id"),
@@ -214,6 +270,7 @@ fn main() {
             match matches.subcommand() {
                 ("ls", Some(args)) => list(bucket, args),
                 ("up", Some(args)) => put_args(bucket, args),
+                ("post", Some(args)) => post(bucket, args),
                 ("get", Some(args)) => get_args(bucket, args),
                 ("down", Some(args)) => down_args(bucket, args),
                 ("rm", Some(args)) => delete(bucket, args),

@@ -41,11 +41,17 @@ use prettytable::format::FormatBuilder;
 use clap::ArgMatches;
 
 /// 列出对象
-/// * `-p`, `--prefix`: 过滤前缀
-/// * `-q`, `--quiet`: 只显示名字
+///
 /// ```shell
 /// ct-cli object <bucket> ls [-p] [-q]
 /// ```
+///
+/// ### 选项
+/// * `-p`, `--prefix`: 过滤前缀
+/// * `-q`, `--quiet`: 只显示名字
+///
+/// ### 截图
+/// ![object--prefix-delete.png](https://i.loli.net/2017/11/21/5a13b0bfa6f07.png)
 pub fn list(bucket: &str, args: &ArgMatches) {
     debug!("List Objects");
     //let version = args.value_of("version").unwrap();
@@ -78,6 +84,7 @@ pub fn list(bucket: &str, args: &ArgMatches) {
 }
 
 /// 新建对象（暂未提供接口）
+///
 /// ```shell
 /// ct-cli object <bucket> new <key> <body>
 /// ```
@@ -98,9 +105,9 @@ pub fn new(bucket: &str, args: &ArgMatches) {
         Ok(out) => {
             debug!("{:#?}", out);
             if body.len() > 40 {
-                println!("Create {} to {}", key, bucket);
+                info!("Create {} to {}", key, bucket);
             } else {
-                println!("Create {} with \'{}\' to {}", key, body, bucket);
+                info!("Create {} with \'{}\' to {}", key, body, bucket);
             }
         }
         Err(err) => print_aws_err!(err),
@@ -108,11 +115,14 @@ pub fn new(bucket: &str, args: &ArgMatches) {
 }
 
 /// 读取对象，从 `clap` 中解析参数
-/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
-/// * `-k`, `--password` 密钥
+///
 /// ```shell
 /// ct-cli object <bucket> get <key> [-e] [-k]
 /// ```
+///
+/// ### 选项
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
 pub fn get_args(bucket: &str, args: &ArgMatches) {
     debug!("Get Object");
     let key = args.value_of("key").unwrap();
@@ -132,7 +142,7 @@ pub fn get_args(bucket: &str, args: &ArgMatches) {
         ),
         _ => get(bucket.to_string(), key.to_string()),
     } {
-        Ok(out) => println!(
+        Ok(out) => info!(
             "+--[ START ]----+\n{}\n+--[  END  ]----+",
             String::from_utf8_lossy(out.get_body())
         ),
@@ -141,12 +151,17 @@ pub fn get_args(bucket: &str, args: &ArgMatches) {
 }
 
 /// 下载对象，从 `clap` 中解析参数
-/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
-/// * `-k`, `--password` 密钥
-/// * `-o`, `--output` 储存文件夹
+///
 /// ```shell
 /// ct-cli object <bucket> down [-e] [-k] <keys>... -o <output>
 /// ```
+/// ### 选项
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+/// * `-o`, `--output` 储存文件夹
+///
+/// ### 截图
+/// ![object-down.png](https://i.loli.net/2017/11/21/5a13b0c349efe.png)
 pub fn down_args(bucket: &str, args: &ArgMatches) {
     debug!("Download Object");
     let keys = args.values_of("keys").unwrap().collect::<Vec<_>>();
@@ -155,7 +170,6 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
     let ct = CTClient::default_client();
 
     keys.iter().for_each(|key| {
-        print!("{}\t", key);
         match match (
             (args.value_of("PASSWORD"), args.value_of("ENCRYPT_METHOD")),
             args.is_present("multithread"),
@@ -176,7 +190,7 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
                     Ok(file) => file,
                     Err(err) => {
                         debug!("{:#?}", err);
-                        println!("{}", " ✗ ".red().bold());
+                        info!("{}\t{}", " ✗ ".red().bold(), key);
                         return;
                     }
                 };
@@ -184,11 +198,11 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
                 match file.write_all(out.get_body()) {
                     Ok(output) => {
                         debug!("{:#?}", output);
-                        println!("{}", " ✓ ".green().bold());
+                        info!("{}\t{}", " ✓ ".green().bold(), key);
                     }
                     Err(err) => {
                         debug!("{:#?}", err);
-                        println!("{}", " ✗ ".red().bold());
+                        info!("{}\t{}", " ✗ ".red().bold(), key);
                     }
                 }
             }
@@ -198,6 +212,7 @@ pub fn down_args(bucket: &str, args: &ArgMatches) {
 }
 
 /// 读取对象
+///
 /// ```shell
 /// ct-cli object <bucket> get <key>
 /// ```
@@ -215,11 +230,13 @@ pub fn get(bucket: String, key: String) -> Result<GetObjectOutput, S3Error> {
 }
 
 /// 读取加密对象
-/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
-/// * `-k`, `--password` 密钥
+///
 /// ```shell
 /// ct-cli object <bucket> get <key> [-e] [-k]
 /// ```
+/// ### 选项
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
 pub fn get_securely(
     bucket: String,
     key: String,
@@ -246,14 +263,18 @@ pub fn get_securely(
 }
 
 /// 上传对象，从 `clap` 中解析参数
+///
+/// ```shell
+/// ct-cli object <bucket> up <keys> [-e] [-k] -p [prefix]
+/// ```
+/// ### 选项
 /// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
 /// * `-k`, `--password` 密钥
 /// * `-m`, `--multithread` 多线程上传
 /// * `-p`, `--prefix` 上传到指定前缀
 /// * `-s`, `--storageclass` 储存模式
-/// ```shell
-/// ct-cli object <bucket> up <keys> [-e] [-k] -p [prefix]
-/// ```
+///
+///
 pub fn put_args(bucket: &str, args: &ArgMatches) {
     let keys = args.values_of("keys").unwrap().collect::<Vec<_>>();
     // let path = Path::new(args.value_of("path").unwrap());
@@ -268,54 +289,63 @@ pub fn put_args(bucket: &str, args: &ArgMatches) {
     };
 
     keys.iter().for_each(|key| {
-        match (
-            (args.value_of("PASSWORD"), args.value_of("ENCRYPT_METHOD")),
-            args.is_present("multithread"),
-        ) {
-            ((Some(password), Some(method)), true) => unimplemented!(),
-            ((Some(password), None), true) => unimplemented!(),
-            ((Some(password), Some(method)), false) => put_securely(
-                bucket.to_string(),
-                Path::new(key),
-                prefix.to_string(),
-                method.to_string(),
-                password.to_string(),
-                storage_class.clone(),
-                reverse,
-            ),
-            ((Some(password), None), false) => put_securely(
-                bucket.to_string(),
-                Path::new(key),
-                prefix.to_string(),
-                "".to_string(),
-                password.to_string(),
-                storage_class.clone(),
-                reverse,
-            ),
-            ((None, None), true) => put_multithread(
-                bucket.to_string(),
-                Path::new(key),
-                prefix.to_string(),
-                storage_class.clone(),
-                reverse,
-            ),
-            _ => put(
-                bucket.to_string(),
-                Path::new(key),
-                prefix.to_string(),
-                storage_class.clone(),
-                reverse,
-            ),
+        if args.is_present("multipart") {
+            put_multipart(bucket.to_string(), Path::new(key), 1024);
+        } else {
+            match (
+                (args.value_of("PASSWORD"), args.value_of("ENCRYPT_METHOD")),
+                args.is_present("multithread"),
+            ) {
+                ((Some(password), Some(method)), true) => unimplemented!(),
+                ((Some(password), None), true) => unimplemented!(),
+                ((Some(password), Some(method)), false) => put_securely(
+                    bucket.to_string(),
+                    Path::new(key),
+                    prefix.to_string(),
+                    method.to_string(),
+                    password.to_string(),
+                    storage_class.clone(),
+                    reverse,
+                ),
+                ((Some(password), None), false) => put_securely(
+                    bucket.to_string(),
+                    Path::new(key),
+                    prefix.to_string(),
+                    "".to_string(),
+                    password.to_string(),
+                    storage_class.clone(),
+                    reverse,
+                ),
+                ((None, None), true) => put_multithread(
+                    bucket.to_string(),
+                    Path::new(key),
+                    prefix.to_string(),
+                    storage_class.clone(),
+                    reverse,
+                ),
+                _ => put(
+                    bucket.to_string(),
+                    Path::new(key),
+                    prefix.to_string(),
+                    storage_class.clone(),
+                    reverse,
+                ),
+            }
         }
     });
 }
 
 /// 上传对象
-/// * `-p`, `--prefix` 上传到指定前缀
-/// * `-s`, `--storageclass` 储存模式
+///
 /// ```shell
 /// ct-cli object <bucket> up <keys> -p [prefix]
 /// ```
+/// ### 选项
+/// * `-p`, `--prefix` 上传到指定前缀
+/// * `-s`, `--storageclass` 储存模式
+///
+/// ### 截图
+/// ![object-up.png](https://i.loli.net/2017/11/21/5a13b0c28da64.png)
 pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, reverse: bool) {
     debug!("Put Object");
     if path.is_dir() {
@@ -335,12 +365,11 @@ pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, r
         return;
     }
 
-    print!("{:?}\t", path);
     let file = match File::open(path) {
         Ok(file) => file,
         Err(err) => {
             debug!("{:#?}", err);
-            println!("{}", " ✗ ".red().bold());
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
             return;
         }
     };
@@ -351,7 +380,7 @@ pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, r
 
     match file.take(metadata.len()).read_to_end(&mut buffer) {
         Ok(_) => {}
-        Err(err) => println!("{}", err),
+        Err(err) => info!("{}", err),
     }
 
     let mut request = PutObjectRequest::default();
@@ -372,21 +401,143 @@ pub fn put(bucket: String, path: &Path, prefix: String, storage_class: String, r
     match CTClient::default_client().put_object(&request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
-            println!("{}", " ✓ ".green().bold());
+            info!("{}\t{:?}", " ✓ ".green().bold(), path);
         }
         Err(err) => {
             print_aws_err!(err);
-            println!("{}", " ✗ ".red().bold());
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
         }
     }
 }
 
+
+/// 分片上传
+///
+/// ```shell
+/// ct-cli object <bucket> up <keys> --mp
+/// ```
+/// ### 选项
+/// * `--mp` 分片上传
+///
+/// ### 截图
+/// ![object-up-multipart.png](https://i.loli.net/2017/11/22/5a157da71db3a.png)
+/// 
+pub fn put_multipart(bucket: String,
+                     path: &Path,
+                     part_size: u64) {
+    let ct = CTClient::default_client();
+    let correct_key = path.file_name().unwrap().to_str().unwrap().to_string();
+
+    // Create multipart
+    let create_multipart_upload: MultipartUploadCreateOutput;
+    let mut request = MultipartUploadCreateRequest::default();
+    request.bucket = bucket.to_string();
+    request.key = correct_key.clone();
+
+    match ct.multipart_upload_create(&request) {
+        Ok(output) => {
+            create_multipart_upload = output;
+        },
+        Err(err) => {
+            print_aws_err!(err);
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
+            return;
+        },
+    }
+
+    let upload_id: &str = &create_multipart_upload.upload_id;
+    let mut parts_list: Vec<String> = Vec::new();
+
+    // NB: To begin with the multipart will be a sequential upload in this thread! Aftwards, it will
+    // be split out to a multiple of threads...
+
+    let file = File::open(path).unwrap();
+    let metadata = file.metadata().unwrap();
+
+    let mut part_buffer: Vec<u8> = Vec::with_capacity(metadata.len() as usize);
+
+    match file.take(metadata.len()).read_to_end(&mut part_buffer) {
+        Ok(_) => {},
+        Err(err) => {
+            debug!("{:#?}", err);
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
+            return;
+        },
+    }
+
+    let mut request = MultipartUploadPartRequest::default();
+    request.bucket = bucket.to_string();
+    request.upload_id = upload_id.to_string();
+    request.key = correct_key.clone();
+
+    request.body = Some(&part_buffer);
+    request.part_number = 1;
+
+    // Compute hash - Hash is slow
+    let hash = md5(request.body.unwrap());
+
+    request.content_md5 = Some(hash);
+
+    match ct.multipart_upload_part(&request) {
+        Ok(output) => {
+            // Collecting the partid in a list.
+            let new_output = output.clone();
+            parts_list.push(output);
+
+            debug!("{:#?}", new_output);
+            info!("├─ {}\t{}", " ✓ ".green().bold(), new_output);
+        },
+        Err(err) => {
+            print_aws_err!(err);
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
+            return;
+        },
+    }
+    // End of upload
+
+    // Complete multipart
+    let item_list: Vec<u8>;
+
+    let mut request = MultipartUploadCompleteRequest::default();
+    request.bucket = bucket.to_string();
+    request.upload_id = upload_id.to_string();
+    request.key = correct_key;
+
+    // parts_list gets converted to XML and sets the item_list.
+    match multipart_upload_finish_xml(&parts_list) {
+        Ok(parts_in_xml) => item_list = parts_in_xml,
+        Err(err) => {
+            print_aws_err!(err);
+            info!("{}", " ✗ ".red().bold());
+            return;
+        },
+    }
+
+    request.multipart_upload = Some(&item_list);
+
+    match ct.multipart_upload_complete(&request) {
+        Ok(out) => {
+            debug!("{:#?}", out);
+            info!("└─ {}\t{:?}", " ✓ ".green().bold(), out.key);
+        },
+        Err(err) => {
+            print_aws_err!(err);
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
+        },
+    }
+}
+
 /// 多线程上传
-/// * `-p`, `--prefix` 上传到指定前缀
-/// * `-s`, `--storageclass` 储存模式
+///
 /// ```shell
 /// ct-cli object <bucket> up <keys> -m -p [prefix] -s [storageclass]
 /// ```
+/// ### 选项
+/// * `-p`, `--prefix` 上传到指定前缀
+/// * `-s`, `--storageclass` 储存模式
+///
+/// ### 截图
+/// ![object-up-mutilthread.png](https://i.loli.net/2017/11/21/5a13b99533148.png)
 pub fn put_multithread(
     bucket: String,
     path: &Path,
@@ -431,7 +582,7 @@ pub fn put_multithread(
         Ok(file) => file,
         Err(err) => {
             debug!("{:#?}", err);
-            println!("{:?} {}", path, " ✗ ".red().bold());
+            info!("{:?} {}", path, " ✗ ".red().bold());
             return;
         }
     };
@@ -442,7 +593,7 @@ pub fn put_multithread(
 
     match file.take(metadata.len()).read_to_end(&mut buffer) {
         Ok(_) => {}
-        Err(err) => println!("{}", err),
+        Err(err) => info!("{}", err),
     }
 
     let mut request = PutObjectRequest::default();
@@ -462,21 +613,26 @@ pub fn put_multithread(
     match CTClient::default_client().put_object(&request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
-            println!("{:?} {}", path, " ✓ ".green().bold());
+            info!("{}\t{:?}", " ✓ ".green().bold(), path);
         }
         Err(err) => {
             print_aws_err!(err);
-            println!("{:?} {}", path, " ✗ ".red().bold());
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
         }
     }
 }
 
 /// 上传自定义加密对象，使用户拥有独特的签名方式
-/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
-/// * `-k`, `--password` 密钥
+///
 /// ```shell
 /// ct-cli object <bucket> up <key> [-e] [-k]
 /// ```
+/// ### 选项
+/// * `-e`, `--encryptmethod` 加密方式（aes-128-cfb, aes-128-cfb128, aes-256-cfb, aes-256-cfb128, rc4, rc4-md5...）
+/// * `-k`, `--password` 密钥
+///
+/// ### 截图
+/// ![object-up-securely.png](https://i.loli.net/2017/11/21/5a13b0c42001c.png)
 pub fn put_securely(
     bucket: String,
     path: &Path,
@@ -506,12 +662,11 @@ pub fn put_securely(
         return;
     }
 
-    print!("{:?}\t", path);
     let file = match File::open(path) {
         Ok(file) => file,
         Err(err) => {
             debug!("{:#?}", err);
-            println!("{}", " ✗ ".red().bold());
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
             return;
         }
     };
@@ -522,7 +677,7 @@ pub fn put_securely(
 
     match file.take(metadata.len()).read_to_end(&mut buffer) {
         Ok(_) => {}
-        Err(err) => println!("{}", err),
+        Err(err) => info!("{}", err),
     }
 
     let method = match method.parse() {
@@ -548,21 +703,52 @@ pub fn put_securely(
     match CTClient::default_securely_client(password, method).put_object_securely(request, None) {
         Ok(output) => {
             debug!("{:#?}", output);
-            println!("{}", " ✓ ".green().bold());
+            info!("{}\t{:?}", " ✓ ".green().bold(), path);
         }
         Err(err) => {
             print_aws_err!(err);
-            println!("{}", " ✗ ".red().bold());
+            info!("{}\t{:?}", " ✗ ".red().bold(), path);
         }
     }
 }
 
-// TODO: 通过 Post方式上传本地文件（文件小于 100M）
+/// Post 上传文件
+///
+/// ```shell
+/// ct-cli object <bucket> post <key>
+/// ```
+///
+/// ### 选项
+/// * `-e`, `--expires` 有效期
+///
+/// ### 截图
+/// ![object-post.png](https://i.loli.net/2017/11/24/5a17baf75e9d8.png)
+/// ![object-post-browser.png](https://i.loli.net/2017/11/24/5a17baf86770b.png)
+///
+pub fn post(bucket: &str, args: &ArgMatches) {
+    debug!("Post Object");
+    let key = args.value_of("key").unwrap();
+    let expires = match args.value_of("expires") {
+        Some(s) => Some(s.to_string()),
+        None => None,
+    };
+
+    CTClient::default_client().post_object(&PostObjectRequest {
+        bucket: bucket.to_string(),
+        key: key.to_string(),
+        expires,
+    });
+}
+
 
 /// 删除对象（Delete）
+///
 /// ```shell
 /// ct-cli object <bucket> rm <keys>
 /// ```
+///
+/// ### 截图
+/// ![object-rm.png](https://i.loli.net/2017/11/21/5a13b0c232cb1.png)
 pub fn delete(bucket: &str, args: &ArgMatches) {
     debug!("Remove Object");
     let count = args.occurrences_of("keys");
@@ -574,7 +760,6 @@ pub fn delete(bucket: &str, args: &ArgMatches) {
     let mut error = 0;
 
     keys.iter().for_each(|key| {
-        print!("{}\t", key);
         match ct.delete_object(
             &DeleteObjectRequest {
                 bucket: bucket.to_string(),
@@ -585,19 +770,19 @@ pub fn delete(bucket: &str, args: &ArgMatches) {
         ) {
             Ok(output) => {
                 debug!("{:#?}", output);
-                println!("{}", " ✓ ".green().bold());
+                info!("{}\t{}", " ✓ ".green().bold(), key);
                 success += 1;
             }
             Err(err) => {
                 print_aws_err!(err);
-                println!("{}", " ✗ ".red().bold());
+                info!("{}\t{}", " ✗ ".red().bold(), key);
                 error += 1;
             }
         }
     });
 
 
-    println!(
+    info!(
         "\nAll: {}, Success: {}, Error: {}",
         count,
         format!("{}", success).green(),
@@ -606,10 +791,15 @@ pub fn delete(bucket: &str, args: &ArgMatches) {
 }
 
 /// 分享对象（share, presign）
-/// * `-e`, `--expires`　有效期
+///
 /// ```shell
 /// ct-cli object <bucket> share <keys>
 /// ```
+/// ### 选项
+/// * `-e`, `--expires` 有效期
+///
+/// ### 截图
+/// ![object-share.png](https://i.loli.net/2017/11/21/5a13b0c1d5da4.png)
 pub fn share(bucket: &str, args: &ArgMatches) {
     debug!("Share Object");
     let key = args.value_of("key").unwrap();
@@ -623,7 +813,7 @@ pub fn share(bucket: &str, args: &ArgMatches) {
         key: key.to_string(),
         expires,
     }) {
-        Ok(h) => print!("{}", h),
+        Ok(h) => info!("{}", h),
         Err(err) => print_aws_err!(err),
     }
 }
