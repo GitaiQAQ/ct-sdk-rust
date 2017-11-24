@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["md5",""]],"struct":[["CTClient","A trait to set the CTYun OOS Config default, like SignV2 and Endpoint."]],"trait":[["CTSignedRequest","A trait to abstract the idea of generate a pre-signed Url for an S3 object from a SignedRequest."]]});

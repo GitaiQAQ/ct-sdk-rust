@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["bucket",""],["iam",""],["object","High-level OOS object operations commands Like http://docs.aws.amazon.com/cli/latest/reference/s3/index.html"]],"struct":[["CTClient","A trait to set the CTYun OOS Config default, like SignV2 and Endpoint."]]});

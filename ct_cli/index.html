@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ct_cli` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ct_cli">
+
+    <title>ct_cli - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc mod">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Crate ct_cli</p><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'ct_cli', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Crate <a class="mod" href=''>ct_cli</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../src/ct_cli/main.rs.html#22-294' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>天翼云命令行接口</p>
+
+<h1 id='快速开始' class='section-header'><a href='#快速开始'>快速开始</a></h1>
+<h2 id='初始化-key' class='section-header'><a href='#初始化-key'>初始化 Key</a></h2>
+<h3 id='参数' class='section-header'><a href='#参数'>参数</a></h3>
+<pre><code class="language-shell">$ ct-cli &lt;some commands&gt; -a &lt;Access Key Id&gt; -s &lt;Secret Access Key&gt;
+</code></pre>
+
+<h3 id='环境变量' class='section-header'><a href='#环境变量'>环境变量</a></h3>
+<pre><code class="language-shell">$ set AWS_ACCESS_KEY_ID=&quot;Access Key Id&quot;
+$ set AWS_SECRET_ACCESS_KEY=&quot;Secret Access Key&quot;
+$ ct-cli &lt;some commands&gt;
+</code></pre>
+
+<h3 id='配置文件' class='section-header'><a href='#配置文件'>配置文件</a></h3>
+<pre><code class="language-shell">$ cat ~/.aws/credentials
+[default]
+aws_access_key_id = ae2600e3194ec00fbcfb
+aws_secret_access_key = c760152a28e608eb5b6d3bac02dd2780bff087cb
+$ ct-cli &lt;some commands&gt;
+</code></pre>
+
+<h3 id='其他方式' class='section-header'><a href='#其他方式'>其他方式：</a></h3>
+<ul>
+<li><p>Shared credentials file</p></li>
+<li><p>IAM Role</p></li>
+</ul>
+
+<h2 id='详细内容' class='section-header'><a href='#详细内容'>详细内容</a></h2>
+<ul>
+<li><a href="./cli/iam/">IAM</a></li>
+<li><a href="./cli/bucket/">Bucket</a></li>
+<li><a href="./cli/object/">Object</a></li>
+</ul>
+
+<h2 id='check-point' class='section-header'><a href='#check-point'>Check Point</a></h2>
+<h3 id='初级-2' class='section-header'><a href='#初级-2'>初级 (2&#39;)</a></h3>
+<ul>
+<li>[X] <a href="./cli/iam/fn.create.html">创建一组 AK/SK</a></li>
+<li>[X] <a href="./cli/iam/fn.update.html">更改 AK/SK 属性（主秘钥/普通秘钥）</a></li>
+<li><p>[X] <a href="./cli/iam/fn.delete.html">删除已有的 AK/SK</a></p></li>
+<li><p>[X] <a href="./cli/bucket/fn.create.html">创建一个 Bucket</a></p></li>
+<li><p>[X] <a href="./cli/bucket/fn.acl.html">更改创建的 Bucket 属性（私有、公有、只读）</a></p></li>
+<li><p>[X] <a href="./cli/bucket/fn.delete.html">删除已创建的 Bucket</a></p></li>
+<li><p>[X] <a href="./cli/object/fn.put.html">通过 Put 方式上传本地文件（文件小于100M）</a></p></li>
+<li><p>[X] <a href="./cli/object/fn.down_args.html">下载已上传的 Object 到本地 （Download）</a></p></li>
+<li><p>[X] <a href="./cli/object/fn.share.html">分享已上传的 Object（Share），URL 有效期为一周</a></p></li>
+<li><p>[X] <a href="./cli/object/fn.delete.html">删除已上传的 Object（Delete）</a></p></li>
+</ul>
+
+<h3 id='中级-15' class='section-header'><a href='#中级-15'>中级 (15&#39;)</a></h3>
+<ul>
+<li>[X] <a href="./cli/object/fn.put_multipart.html">分段上传一个本地文件</a></li>
+<li>[X] <a href="./cli/object/fn.put_securely.html">设置专属签名，实现自定义加密，使用户拥有独特的签名方式</a></li>
+</ul>
+
+<h3 id='高级-20' class='section-header'><a href='#高级-20'>高级 (20&#39;)</a></h3>
+<ul>
+<li>[X] <a href="./cli/object/fn.put.html">设置 Object 上传时的冗余模式，使上传时可实现自定义分片模式</a></li>
+<li>[X] <a href="./cli/object/fn.post.html">通过 Post 方式上传本地文件（文件小于100M）</a></li>
+</ul>
+
+<h3 id='提高题-20' class='section-header'><a href='#提高题-20'>提高题 (20&#39;)</a></h3>
+<ul>
+<li>[X] <a href="./cli/object/fn.put_multithread.html">实现多线程上传多个对象</a></li>
+<li>[X] <a href="./cli/object/fn.delete.html">list 出带前缀 <code>prefix/</code> 的所有对象，读取这些对象,删除其他对象</a></li>
+</ul>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="cli/index.html"
+                                  title='mod ct_cli::cli'>cli</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="macro" href="macro.print_aws_err.html"
+                                  title='macro ct_cli::print_aws_err'>print_aws_err</a></td>
+                           <td class='docblock-short'>
+                                <p>打印一个错误</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="macro" href="macro.printlist.html"
+                                  title='macro ct_cli::printlist'>printlist</a></td>
+                           <td class='docblock-short'>
+                                <p>打印一个列表</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="macro" href="macro.printstc.html"
+                                  title='macro ct_cli::printstc'>printstc</a></td>
+                           <td class='docblock-short'>
+                                <p>Print struct by prettytable to std.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="macro" href="macro.printstd.html"
+                                  title='macro ct_cli::printstd'>printstd</a></td>
+                           <td class='docblock-short'>
+                                <p>Print struct by prettytable to std.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>↑</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>↓</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>↹</dt>
+                    <dd>Switch tab</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "ct_cli";
+    </script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

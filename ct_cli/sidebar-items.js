@@ -1,0 +1,1 @@
+initSidebarItems({"macro":[["print_aws_err","打印一个错误"],["printlist","打印一个列表"],["printstc","Print struct by prettytable to std."],["printstd","Print struct by prettytable to std."]],"mod":[["cli",""]]});

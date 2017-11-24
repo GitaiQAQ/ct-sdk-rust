@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["bucket","Additional API for Bucket Operations"],["iam","Additional API for IAM Operations"],["object","Additional API for Object Operations"],["sdk","CTYun OOS SDK"]],"trait":[["AwsCredentialsProvider","A trait for types that produce `AwsCredentials` This trait is implemented on most S3 calls."]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create","创建一组 AK/SK"],["delete","删除 AK/SK"],["list","显示账户列表(ls)"],["update","更改 AK/SK属性"]]});

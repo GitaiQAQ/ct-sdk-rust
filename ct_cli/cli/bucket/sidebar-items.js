@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["acl","更改属性（私有、公有、只读）"],["create","创建新仓库(mb)"],["delete","删除空仓库(rb)"],["list","显示仓库列表(ls)"]]});
